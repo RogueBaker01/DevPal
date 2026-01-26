@@ -1,0 +1,11 @@
+{
+    "name": "devpal-root",
+    "version": "1.0.0",
+    "private": true,
+    "scripts": {
+        "start": "npm start --prefix Front",
+        "android": "npm run android --prefix Front",
+        "ios": "npm run ios --prefix Front",
+        "web": "npm run web --prefix Front"
+    }
+}
