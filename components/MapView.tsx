@@ -73,7 +73,7 @@ const WebMap = (props: MapViewProps) => {
     const RL = require("react-leaflet");
     MapContainer = RL.MapContainer;
     TileLayer = RL.TileLayer;
-    // Fix leafel icons
+    // Fix leaflet icons
     // implementation detail omitted for brevity, standard leaflet icon fix might be needed
   } catch (e) {
     return (
