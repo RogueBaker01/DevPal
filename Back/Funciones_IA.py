@@ -1,30 +1,46 @@
 from google import genai
 from google.genai import types
+from google.genai.errors import ClientError
+import time
+from credenciales import api_key
+from noticias import generar_noticias
+from generar_desafio_diario import generar_desafio_diario
+from review_code import review_code
+from generar_pista import generar_pista
 
-def generar_micro_desafio(nivel: str, tema: str, lenguaje: str):
-    client = genai.Client(api_key="AIzaSyBDsoTIRGJOisnNSDPasaBTapiAOoogoLk")
-    prompt = f"""Actúa como: Un Ingeniero de Software Senior y Entrevistador Técnico (FAANG level).
-    Tu tarea: Generar un "Micro-desafío" de programación en {lenguaje} de nivel "{nivel}".
-    Tema: "{tema}".
-    Estructura de le respuesta:   
-    1. Escenario Real: Describe brevemente un problema de negocio o ingeniería (ej: "Estamos procesando telemetría de un sensor y necesitamos filtrar ruido...").
-    2. El Problema: Definición técnica precisa de lo que se debe programar.
-    3. Firma de la Función: def nombre_funcion(input: tipo) -> tipo: 
-    4. Input / Output:
-    Input: Descripción y formato.
-    Output: Lo que debe retornar.
-    5. Restricciones (Challenge):
-    Complejidad temporal máxima (ej: $O(n)$ o $O(\log n)$).
-    Restricciones de memoria o uso de librerías (ej: "No usar librerías externas, solo nativas").
-    6. Casos de Prueba (Ejemplos):
-    Caso Normal.
-    Caso Borde (Edge Case: lista vacía, números negativos, etc.).
-    7. Pista Conceptual: Una breve guía sobre qué estructura de datos o patrón de diseño podría ser útil, sin dar la solución..
-    8. No menciones que eres un ingeniero de software ni que eres un entrevistador técnico, solo muestra el micro-desafío."""
-    response = client.models.generate_content(
-        model='gemini-3-flash-preview',
-        contents=prompt
-    )
-    print(response.text)
+client = genai.Client(api_key=api_key())
 
-generar_micro_desafio("Básico", "Algoritmos", "Python")  
+informacion_usuario = {
+    "nombre": "Bernardo",
+    "edad": 21,
+    "intereses": ["Machine Learning", "Sim Racing", "AWS", "Backend"],
+    "nivel": "Intermedio", 
+    "lenguajes": ["Python", "C++", "C# (Unity)"] 
+}
+
+desafios_anteriores = [
+    "Calculadora de Propinas",
+    "Filtro de Ruido en Telemetría",
+    "Validación de Palíndromos"
+]
+
+urls_noticias = [
+    "https://cnnespanol.cnn.com/ciencia/tecnologia",
+    "https://www.xataka.com",
+    "https://www.kdnuggets.com/",
+    "https://medium.com/",
+    "https://www.forbes.com/technology/"
+]
+codigo = """
+def buscar_elemento(lista, elemento):
+    for i in range(len(lista)):
+        if lista[i] == elemento:
+            return i
+    return -1
+"""
+lenguaje = "Python"
+noticias = generar_noticias(client, urls_noticias, informacion_usuario)
+respuesta_desafio = generar_desafio_diario(client, informacion_usuario, desafios_anteriores)
+revisar_codigo = review_code(codigo, lenguaje, client, informacion_usuario)
+pista = generar_pista(codigo, lenguaje, client, informacion_usuario)
+
