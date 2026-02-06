@@ -29,107 +29,114 @@ const SUGGESTIONS = [
 
 /**
  * Search Screen (Búsqueda)
- * Based on Figma: Search input with recent searches and suggestions dropdown
+ * Fixed: Solid Blue Header matching other screens
  */
 export default function SearchScreen() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [showDropdown, setShowDropdown] = useState(true);
 
+  const navigateToNotifications = () => router.push('/notifications');
+
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
       
-      {/* Hero image section with search */}
-      <View style={styles.heroSection}>
-        <Image
-          source={{ uri: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=800" }}
-          style={styles.heroImage}
-        />
-        
-        {/* Header overlay */}
-        <View style={styles.headerOverlay}>
-          {/* Search row */}
-          <View style={styles.searchRow}>
-            {/* Mascot */}
-            <Image
-              source={require('@/assets/images/devpal-mascot.png')}
-              style={styles.mascotIcon}
-              resizeMode="contain"
+      {/* SOLID BLUE Header */}
+      <View style={styles.header}>
+        <View style={styles.searchRow}>
+          {/* Mascot */}
+          <Image
+            source={require('@/assets/images/devpal-mascot.png')}
+            style={styles.mascotIcon}
+            resizeMode="contain"
+          />
+          
+          {/* Search input - White background */}
+          <View style={styles.searchContainer}>
+            <TextInput
+              placeholder="Buscar..."
+              placeholderTextColor={COLORS.textMuted}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              style={styles.searchInput}
+              autoFocus
             />
-            
-            {/* Search input */}
-            <View style={styles.searchContainer}>
-              <TextInput
-                placeholder=""
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                style={styles.searchInput}
-                autoFocus
-              />
-            </View>
-            
-            {/* Icons */}
-            <Pressable style={styles.iconButton}>
-              <Ionicons name="person-circle" size={28} color="white" />
-            </Pressable>
-            <Pressable style={styles.iconButton}>
-              <Ionicons name="notifications" size={24} color="white" />
-            </Pressable>
+            {searchQuery.length > 0 && (
+              <Pressable onPress={() => setSearchQuery('')}>
+                <Ionicons name="close-circle" size={18} color={COLORS.textMuted} />
+              </Pressable>
+            )}
           </View>
           
-          {/* Search dropdown */}
-          {showDropdown && (
-            <View style={styles.dropdown}>
-              {/* Recent searches header */}
-              <Text style={styles.dropdownHeader}>Búsquedas recientes</Text>
-              
-              {/* Recent search items */}
-              {RECENT_SEARCHES.map((item) => (
-                <Pressable 
-                  key={item.id} 
-                  style={styles.dropdownItem}
-                  onPress={() => setSearchQuery(item.title)}
-                >
-                  <View style={styles.dropdownItemIcon}>
-                    <Ionicons name="time-outline" size={16} color={COLORS.textMuted} />
-                  </View>
-                  <View>
-                    <Text style={styles.dropdownItemTitle}>{item.title}</Text>
-                    <Text style={styles.dropdownItemSubtitle}>{item.subtitle}</Text>
-                  </View>
-                </Pressable>
-              ))}
-              
-              {/* Suggestions header */}
-              <Text style={styles.dropdownHeader}>Sugerencias de búsqueda</Text>
-              
-              {/* Suggestion items */}
-              {SUGGESTIONS.map((suggestion, index) => (
-                <Pressable 
-                  key={index} 
-                  style={styles.dropdownItem}
-                  onPress={() => setSearchQuery(suggestion)}
-                >
-                  <View style={styles.dropdownItemIcon}>
-                    <Ionicons name="search" size={16} color={COLORS.textMuted} />
-                  </View>
-                  <Text style={styles.dropdownItemTitle}>{suggestion}</Text>
-                </Pressable>
-              ))}
-            </View>
-          )}
+          {/* Icons */}
+          <Pressable style={styles.iconButton}>
+            <Ionicons name="person-circle" size={28} color="white" />
+          </Pressable>
+          <Pressable style={styles.iconButton} onPress={navigateToNotifications}>
+            <Ionicons name="notifications" size={24} color="white" />
+          </Pressable>
         </View>
+
+        {/* Search Dropdown - Positioned relative to header */}
+        {showDropdown && (
+          <View style={styles.dropdown}>
+            {/* Recent searches header */}
+            <Text style={styles.dropdownHeader}>Búsquedas recientes</Text>
+            
+            {/* Recent search items */}
+            {RECENT_SEARCHES.map((item) => (
+              <Pressable 
+                key={item.id} 
+                style={styles.dropdownItem}
+                onPress={() => setSearchQuery(item.title)}
+              >
+                <View style={styles.dropdownItemIcon}>
+                  <Ionicons name="time-outline" size={16} color={COLORS.textMuted} />
+                </View>
+                <View>
+                  <Text style={styles.dropdownItemTitle}>{item.title}</Text>
+                  <Text style={styles.dropdownItemSubtitle}>{item.subtitle}</Text>
+                </View>
+              </Pressable>
+            ))}
+            
+            {/* Suggestions header */}
+            <Text style={styles.dropdownHeader}>Sugerencias de búsqueda</Text>
+            
+            {/* Suggestion items */}
+            {SUGGESTIONS.map((suggestion, index) => (
+              <Pressable 
+                key={index} 
+                style={styles.dropdownItem}
+                onPress={() => setSearchQuery(suggestion)}
+              >
+                <View style={styles.dropdownItemIcon}>
+                  <Ionicons name="search" size={16} color={COLORS.textMuted} />
+                </View>
+                <Text style={styles.dropdownItemTitle}>{suggestion}</Text>
+              </Pressable>
+            ))}
+          </View>
+        )}
       </View>
       
-      {/* White content container */}
+      {/* Content */}
       <ScrollView 
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
+        {/* Hero Image - Below header */}
+        <View style={styles.heroSection}>
+           <Image
+            source={{ uri: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=800" }}
+            style={styles.heroImage}
+          />
+        </View>
+
         {/* Filter pills */}
-        <View style={styles.filtersContainer}>
+        <View style={[styles.filtersContainer, { marginTop: 20 }]}>
           <Pressable style={[styles.filterPill, styles.filterPillActive]}>
             <Text style={styles.filterTextActive}>Hackathons</Text>
           </Pressable>
@@ -177,22 +184,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.white,
   },
-  heroSection: {
-    height: 220,
-    position: 'relative',
-  },
-  heroImage: {
-    width: '100%',
-    height: '100%',
-  },
-  headerOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
+  header: {
+    backgroundColor: COLORS.primaryBlue,
     paddingTop: 48,
     paddingHorizontal: 16,
-    backgroundColor: 'rgba(0,0,0,0.2)',
+    paddingBottom: 16,
+    zIndex: 10,
   },
   searchRow: {
     flexDirection: 'row',
@@ -209,8 +206,12 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   searchInput: {
+    flex: 1,
     fontSize: 14,
     color: COLORS.darkBg,
   },
@@ -220,13 +221,17 @@ const styles = StyleSheet.create({
   dropdown: {
     backgroundColor: COLORS.white,
     borderRadius: 12,
-    marginTop: 8,
+    marginTop: 12,
     padding: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 8,
     elevation: 5,
+    position: 'absolute',
+    top: '100%',
+    left: 16,
+    right: 16,
   },
   dropdownHeader: {
     color: COLORS.textMuted,
@@ -260,15 +265,24 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+    zIndex: 1,
   },
   scrollContent: {
-    padding: 20,
     paddingBottom: 120,
+  },
+  heroSection: {
+    height: 160,
+    width: '100%',
+  },
+  heroImage: {
+    width: '100%',
+    height: '100%',
   },
   filtersContainer: {
     flexDirection: 'row',
     gap: 12,
     marginBottom: 24,
+    paddingHorizontal: 20,
   },
   filterPill: {
     paddingHorizontal: 24,
@@ -294,12 +308,14 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '700',
     marginBottom: 16,
+    paddingHorizontal: 20,
   },
   eventCard: {
     backgroundColor: COLORS.primaryBlue,
     borderRadius: 12,
     marginBottom: 12,
     overflow: 'hidden',
+    marginHorizontal: 20,
   },
   eventCardHeader: {
     flexDirection: 'row',

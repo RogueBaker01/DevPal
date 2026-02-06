@@ -29,8 +29,7 @@ const COLORS = {
 };
 
 /**
- * Login Screen (Iniciar sesión)
- * Based on Figma: Blue header with bubbles and mascot, white form container
+ * Login Screen - Fixed bigger logos
  */
 export default function LoginScreen() {
   const router = useRouter();
@@ -53,7 +52,7 @@ export default function LoginScreen() {
         <View style={styles.bubble2} />
         <View style={styles.bubble3} />
         
-        {/* Mascot */}
+        {/* Mascot - BIGGER */}
         <Image
           source={require('@/assets/images/devpal-mascot.png')}
           style={styles.mascot}
@@ -132,16 +131,13 @@ export default function LoginScreen() {
             <View style={styles.dividerLine} />
           </View>
           
-          {/* Social buttons */}
+          {/* Social buttons - BIGGER */}
           <View style={styles.socialContainer}>
             <Pressable style={styles.socialButton}>
-              <Image
-                source={{ uri: 'https://www.google.com/favicon.ico' }}
-                style={styles.socialIcon}
-              />
+              <Text style={styles.googleIcon}>G</Text>
             </Pressable>
             <Pressable style={styles.socialButton}>
-              <Ionicons name="logo-apple" size={24} color="#000" />
+              <Ionicons name="logo-apple" size={28} color="#000" />
             </Pressable>
           </View>
           
@@ -176,37 +172,36 @@ const styles = StyleSheet.create({
     position: 'relative',
     overflow: 'hidden',
   },
-  // Decorative bubbles
   bubble1: {
     position: 'absolute',
-    width: 200,
-    height: 200,
-    borderRadius: 100,
+    width: 250,
+    height: 250,
+    borderRadius: 125,
     backgroundColor: 'rgba(30, 64, 175, 0.5)',
-    top: -60,
-    left: -60,
+    top: -80,
+    left: -80,
   },
   bubble2: {
     position: 'absolute',
-    width: 150,
-    height: 150,
-    borderRadius: 75,
+    width: 180,
+    height: 180,
+    borderRadius: 90,
     backgroundColor: 'rgba(30, 64, 175, 0.4)',
-    top: -20,
-    right: -40,
+    top: -30,
+    right: -50,
   },
   bubble3: {
     position: 'absolute',
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 140,
+    height: 140,
+    borderRadius: 70,
     backgroundColor: 'rgba(59, 130, 246, 0.3)',
     top: 100,
-    right: 30,
+    right: 40,
   },
   mascot: {
-    width: 200,
-    height: 200,
+    width: 220,
+    height: 220,
     zIndex: 10,
   },
   keyboardView: {
@@ -310,18 +305,19 @@ const styles = StyleSheet.create({
     gap: 24,
   },
   socialButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: COLORS.white,
     borderWidth: 1,
     borderColor: COLORS.borderGray,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  socialIcon: {
-    width: 24,
-    height: 24,
+  googleIcon: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#4285F4',
   },
   registerLinkContainer: {
     flexDirection: 'row',
