@@ -1,175 +1,307 @@
-import ChubbyButton from "@/components/ChubbyButton";
-import Colors from "@/constants/Colors";
-import { userProfile } from "@/constants/MockData";
-import React from "react";
-import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
+import React, { useState } from "react";
+import { View, Text, Pressable, ScrollView, TextInput, StyleSheet, Image } from "react-native";
+import { StatusBar } from "expo-status-bar";
+import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 
+// Design tokens
+const COLORS = {
+  darkBg: '#0F172A',
+  primaryBlue: '#2563EB',
+  accentCyan: '#22D3EE',
+  white: '#FFFFFF',
+  inputGray: '#F1F5F9',
+  textMuted: '#64748B',
+};
+
+// User profile data
+const USER_PROFILE = {
+  name: 'Juan García',
+  email: 'juan@example.com',
+  avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
+  events: 12,
+  certificates: 5,
+  achievements: 3,
+};
+
+// Portfolio events
+const PORTFOLIO_EVENTS = [
+  { id: '1', title: 'Hackathon Nacional 2024', date: '10 Feb 2024', status: 'Ganador' },
+  { id: '2', title: 'Conferencia DevOps México', date: '2 Feb 2024', status: 'Asistido' },
+  { id: '3', title: 'Taller React Native', date: '28 Ene 2024', status: 'Completado' },
+];
+
+/**
+ * Profile/Portfolio Screen
+ */
 export default function ProfileScreen() {
+  const router = useRouter();
+
+  const navigateToNotifications = () => router.push('/notifications');
+  const navigateToSettings = () => router.push('/settings');
+
   return (
-    <ScrollView style={styles.container}>
-      {/* Profile Header */}
+    <View style={styles.container}>
+      <StatusBar style="light" />
+      
+      {/* Header */}
       <View style={styles.header}>
-        <View style={styles.avatarContainer}>
+        <View style={styles.searchRow}>
           <Image
-            source={require("@/assets/images/devpal-mascot.png")}
-            style={styles.mascotImage}
+            source={require('@/assets/images/devpal-mascot.png')}
+            style={styles.mascotIcon}
             resizeMode="contain"
           />
-        </View>
-        <Text style={styles.name}>{userProfile.name}</Text>
-        <View style={styles.levelBadge}>
-          <Text style={styles.levelText}>✨ Nivel {userProfile.level}</Text>
-        </View>
-      </View>
-
-      {/* Stats */}
-      <View style={styles.statsContainer}>
-        <View style={styles.statCard}>
-          <Text style={styles.statValue}>🔥 {userProfile.streak}</Text>
-          <Text style={styles.statLabel}>Racha (días)</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statValue}>🎯 {userProfile.eventsAttended}</Text>
-          <Text style={styles.statLabel}>Eventos</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statValue}>⭐ {userProfile.level}</Text>
-          <Text style={styles.statLabel}>Nivel</Text>
+          
+          <View style={styles.searchContainer}>
+            <Text style={styles.searchText}>Buscar</Text>
+            <Ionicons name="search" size={18} color={COLORS.textMuted} />
+          </View>
+          
+          <Pressable style={styles.iconButton} onPress={navigateToNotifications}>
+            <Ionicons name="person-circle" size={28} color="white" />
+          </Pressable>
+          <Pressable style={styles.iconButton} onPress={navigateToSettings}>
+            <Ionicons name="notifications" size={24} color="white" />
+          </Pressable>
         </View>
       </View>
-
-      {/* Interests */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>💡 Tus Intereses</Text>
-        <View style={styles.interestsContainer}>
-          {userProfile.interests.map((interest, index) => (
-            <View key={index} style={styles.interestChip}>
-              <Text style={styles.interestText}>{interest}</Text>
-            </View>
-          ))}
+      
+      {/* Content */}
+      <ScrollView 
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Profile card */}
+        <View style={styles.profileCard}>
+          <Image
+            source={{ uri: USER_PROFILE.avatar }}
+            style={styles.avatar}
+          />
+          <View style={styles.profileInfo}>
+            <Text style={styles.profileName}>{USER_PROFILE.name}</Text>
+            <Text style={styles.profileEmail}>{USER_PROFILE.email}</Text>
+          </View>
+          <Pressable onPress={navigateToSettings}>
+            <Ionicons name="settings-outline" size={24} color={COLORS.textMuted} />
+          </Pressable>
         </View>
-      </View>
-
-      {/* Actions */}
-      <View style={styles.section}>
-        <ChubbyButton
-          title="⚙️ Configuración"
-          onPress={() => console.log("Settings")}
-          variant="secondary"
-          fullWidth
-        />
-        <ChubbyButton
-          title="📊 Ver Estadísticas"
-          onPress={() => console.log("Stats")}
-          variant="primary"
-          fullWidth
-        />
-      </View>
-
-      <View style={styles.bottomSpacer} />
-    </ScrollView>
+        
+        {/* Stats */}
+        <View style={styles.statsCard}>
+          <View style={styles.statItem}>
+            <Text style={styles.statNumber}>{USER_PROFILE.events}</Text>
+            <Text style={styles.statLabel}>Eventos</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statItem}>
+            <Text style={styles.statNumber}>{USER_PROFILE.certificates}</Text>
+            <Text style={styles.statLabel}>Certificados</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statItem}>
+            <Text style={styles.statNumber}>{USER_PROFILE.achievements}</Text>
+            <Text style={styles.statLabel}>Logros</Text>
+          </View>
+        </View>
+        
+        {/* Portfolio section */}
+        <Text style={styles.sectionTitle}>Mi Portafolio</Text>
+        
+        {PORTFOLIO_EVENTS.map((event) => (
+          <View key={event.id} style={styles.eventCard}>
+            <Pressable style={styles.eventCardHeader}>
+              <View style={styles.eventCardLeft}>
+                <View style={styles.eventIconContainer}>
+                  <Image
+                    source={require('@/assets/images/devpal-mascot.png')}
+                    style={styles.eventIcon}
+                    resizeMode="contain"
+                  />
+                </View>
+                <View style={styles.eventDetails}>
+                  <Text style={styles.eventTitle}>{event.title}</Text>
+                  <Text style={styles.eventDate}>{event.date}</Text>
+                </View>
+              </View>
+              
+              <View style={[
+                styles.statusBadge,
+                event.status === 'Ganador' && styles.statusBadgeHighlight
+              ]}>
+                <Text style={[
+                  styles.statusText,
+                  event.status === 'Ganador' && styles.statusTextHighlight
+                ]}>
+                  {event.status}
+                </Text>
+              </View>
+            </Pressable>
+          </View>
+        ))}
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background.default,
+    backgroundColor: COLORS.primaryBlue,
   },
   header: {
-    alignItems: "center",
-    paddingVertical: 32,
-    backgroundColor: Colors.blue.primary,
-  },
-  avatarContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 16,
-    borderWidth: 4,
-    borderColor: Colors.cyan.bright,
-    overflow: "hidden",
-  },
-  mascotImage: {
-    width: 100,
-    height: 100,
-  },
-  name: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: Colors.white,
-    marginBottom: 8,
-  },
-  levelBadge: {
-    backgroundColor: Colors.purple.vibrant,
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  levelText: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: Colors.white,
-  },
-  statsContainer: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    paddingVertical: 24,
+    paddingTop: 48,
     paddingHorizontal: 16,
+    paddingBottom: 16,
   },
-  statCard: {
-    alignItems: "center",
-    backgroundColor: Colors.white,
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderRadius: 16,
-    minWidth: 100,
-    shadowColor: Colors.shadow.light,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  statValue: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: Colors.text.primary,
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: Colors.text.secondary,
-  },
-  section: {
-    paddingHorizontal: 16,
-    marginTop: 16,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: Colors.text.primary,
-    marginBottom: 12,
-  },
-  interestsContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 8,
   },
-  interestChip: {
-    backgroundColor: Colors.cyan.bright,
+  mascotIcon: {
+    width: 36,
+    height: 36,
+  },
+  searchContainer: {
+    flex: 1,
+    backgroundColor: COLORS.white,
+    borderRadius: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 20,
   },
-  interestText: {
+  searchText: {
+    color: COLORS.textMuted,
     fontSize: 14,
-    fontWeight: "600",
-    color: Colors.white,
   },
-  bottomSpacer: {
-    height: 40,
+  iconButton: {
+    padding: 4,
+  },
+  scrollView: {
+    flex: 1,
+    backgroundColor: COLORS.white,
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+  },
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 120,
+  },
+  profileCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.inputGray,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+  },
+  avatar: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+  },
+  profileInfo: {
+    flex: 1,
+    marginLeft: 16,
+  },
+  profileName: {
+    color: COLORS.darkBg,
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  profileEmail: {
+    color: COLORS.textMuted,
+    fontSize: 14,
+  },
+  statsCard: {
+    flexDirection: 'row',
+    backgroundColor: COLORS.primaryBlue,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 24,
+  },
+  statItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  statDivider: {
+    width: 1,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+  },
+  statNumber: {
+    color: COLORS.white,
+    fontSize: 24,
+    fontWeight: '700',
+  },
+  statLabel: {
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: 12,
+    marginTop: 4,
+  },
+  sectionTitle: {
+    color: COLORS.darkBg,
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 16,
+  },
+  eventCard: {
+    backgroundColor: COLORS.primaryBlue,
+    borderRadius: 12,
+    marginBottom: 12,
+    overflow: 'hidden',
+  },
+  eventCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 14,
+  },
+  eventCardLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  eventIconContainer: {
+    backgroundColor: COLORS.white,
+    borderRadius: 20,
+    padding: 6,
+    marginRight: 12,
+  },
+  eventIcon: {
+    width: 24,
+    height: 24,
+  },
+  eventDetails: {
+    flex: 1,
+  },
+  eventTitle: {
+    color: COLORS.white,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  eventDate: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 12,
+  },
+  statusBadge: {
+    backgroundColor: COLORS.white,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  statusBadgeHighlight: {
+    backgroundColor: COLORS.accentCyan,
+  },
+  statusText: {
+    color: COLORS.textMuted,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  statusTextHighlight: {
+    color: COLORS.darkBg,
   },
 });
