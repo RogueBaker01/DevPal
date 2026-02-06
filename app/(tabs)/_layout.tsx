@@ -1,95 +1,136 @@
-import FontAwesome from "@expo/vector-icons/FontAwesome";
+import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import React from "react";
-import { Image, TouchableOpacity } from "react-native";
+import { View, Image, StyleSheet, Text } from "react-native";
 
-import Colors from "@/constants/Colors";
+// Design tokens
+const COLORS = {
+  darkBg: '#0F172A',
+  primaryBlue: '#2563EB',
+  accentCyan: '#22D3EE',
+  textMuted: '#64748B',
+  white: '#FFFFFF',
+};
 
-function TabBarIcon(props: {
-  name: React.ComponentProps<typeof FontAwesome>["name"];
-  color: string;
-}) {
-  return <FontAwesome size={28} style={{ marginBottom: -3 }} {...props} />;
-}
-
+/**
+ * Tab Layout - Floating dark blue tab bar
+ * Based on Figma: Rounded pill navigation with 4 tabs
+ */
 export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors.primary,
-        tabBarInactiveTintColor: Colors.text.disabled,
+        headerShown: false,
+        tabBarActiveTintColor: COLORS.accentCyan,
+        tabBarInactiveTintColor: COLORS.textMuted,
         tabBarStyle: {
-          backgroundColor: Colors.white,
-          borderTopWidth: 1,
-          borderTopColor: Colors.gray[200],
+          backgroundColor: COLORS.darkBg,
+          borderRadius: 28,
+          marginHorizontal: 16,
+          marginBottom: 24,
           height: 60,
           paddingBottom: 8,
           paddingTop: 8,
-          elevation: 8,
-          shadowColor: Colors.black,
-          shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 4,
+          position: "absolute",
+          borderTopWidth: 0,
+          elevation: 10,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.3,
+          shadowRadius: 10,
         },
-        headerStyle: {
-          backgroundColor: Colors.white,
-          elevation: 0,
-          shadowOpacity: 0,
-          borderBottomWidth: 1,
-          borderBottomColor: Colors.gray[200],
+        tabBarItemStyle: {
+          paddingVertical: 4,
         },
-        headerTintColor: Colors.black,
-        headerTitleStyle: {
-          fontWeight: "700",
-          fontSize: 18,
-          color: Colors.black,
+        tabBarLabelStyle: {
+          fontSize: 10,
+          fontWeight: "600",
         },
-        headerLeft: () => (
-          <TouchableOpacity style={{ marginLeft: 16 }}>
-            <Image
-              source={require("@/assets/images/devpal-mascot.png")}
-              style={{ width: 32, height: 32 }}
-              resizeMode="contain"
-            />
-          </TouchableOpacity>
-        ),
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: "Explorar",
-          tabBarIcon: ({ color }) => (
-            <TabBarIcon name="compass" color={color} />
+          title: "Home",
+          tabBarIcon: ({ color, focused }) => (
+            <View style={focused ? styles.activeIconBg : undefined}>
+              <Image
+                source={require("@/assets/images/devpal-mascot.png")}
+                style={styles.mascotIcon}
+                resizeMode="contain"
+              />
+            </View>
           ),
         }}
       />
       <Tabs.Screen
         name="saved"
         options={{
-          title: "Guardados",
-          tabBarIcon: ({ color }) => (
-            <TabBarIcon name="bookmark" color={color} />
+          title: "Favoritos",
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons 
+              name={focused ? "star" : "star-outline"} 
+              size={22} 
+              color={color} 
+            />
           ),
         }}
       />
       <Tabs.Screen
-        name="chat"
+        name="map"
         options={{
-          title: "Chat IA",
-          tabBarIcon: ({ color }) => (
-            <TabBarIcon name="comments" color={color} />
+          title: "Mapa",
+          tabBarIcon: ({ color, focused }) => (
+            <View style={styles.mapIconContainer}>
+              <View style={[styles.mapStripe, { backgroundColor: color }]} />
+              <View style={[styles.mapStripe, { backgroundColor: color }]} />
+              <View style={[styles.mapStripe, { backgroundColor: color }]} />
+            </View>
           ),
-          tabBarLabel: "Chat",
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: "Perfil",
-          tabBarIcon: ({ color }) => <TabBarIcon name="user" color={color} />,
+          title: "Portafolio",
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons 
+              name={focused ? "document-text" : "document-text-outline"} 
+              size={22} 
+              color={color} 
+            />
+          ),
+        }}
+      />
+      {/* Hidden screens */}
+      <Tabs.Screen
+        name="chat"
+        options={{
+          href: null,
         }}
       />
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  mascotIcon: {
+    width: 28,
+    height: 28,
+  },
+  activeIconBg: {
+    backgroundColor: COLORS.primaryBlue,
+    borderRadius: 16,
+    padding: 4,
+  },
+  mapIconContainer: {
+    width: 22,
+    height: 22,
+    justifyContent: 'space-between',
+  },
+  mapStripe: {
+    width: '100%',
+    height: 5,
+    borderRadius: 2,
+  },
+});

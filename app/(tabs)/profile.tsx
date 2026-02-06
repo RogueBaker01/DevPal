@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, Pressable, ScrollView, TextInput, StyleSheet, Image } from "react-native";
+import { View, Text, Pressable, ScrollView, StyleSheet, Image, Modal } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -26,25 +26,32 @@ const USER_PROFILE = {
 
 // Portfolio events
 const PORTFOLIO_EVENTS = [
-  { id: '1', title: 'Hackathon Nacional 2024', date: '10 Feb 2024', status: 'Ganador' },
-  { id: '2', title: 'Conferencia DevOps México', date: '2 Feb 2024', status: 'Asistido' },
-  { id: '3', title: 'Taller React Native', date: '28 Ene 2024', status: 'Completado' },
+  { id: '1', title: 'Hackathon Nacional 2024', date: '10 Feb 2024', status: 'Ganador', time: '9:00 AM', location: 'Centro de Convenciones' },
+  { id: '2', title: 'Conferencia DevOps México', date: '2 Feb 2024', status: 'Asistido', time: '10:00 AM', location: 'Auditorio Principal' },
+  { id: '3', title: 'Taller React Native', date: '28 Ene 2024', status: 'Completado', time: '2:00 PM', location: 'Startup Campus' },
 ];
 
-/**
- * Profile/Portfolio Screen
- */
 export default function ProfileScreen() {
   const router = useRouter();
+  const [expandedEvent, setExpandedEvent] = useState<string | null>(null);
+  const [showAccountMenu, setShowAccountMenu] = useState(false);
 
+  const navigateToSearch = () => router.push('/search');
   const navigateToNotifications = () => router.push('/notifications');
-  const navigateToSettings = () => router.push('/settings');
+  const navigateToSettings = () => {
+    setShowAccountMenu(false);
+    router.push('/settings');
+  };
+  const handleLogout = () => {
+    setShowAccountMenu(false);
+    router.replace('/(auth)/welcome');
+  };
 
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
       
-      {/* Header */}
+      {/* SOLID BLUE Header */}
       <View style={styles.header}>
         <View style={styles.searchRow}>
           <Image
@@ -53,15 +60,16 @@ export default function ProfileScreen() {
             resizeMode="contain"
           />
           
-          <View style={styles.searchContainer}>
+          <Pressable style={styles.searchContainer} onPress={navigateToSearch}>
             <Text style={styles.searchText}>Buscar</Text>
-            <Ionicons name="search" size={18} color={COLORS.textMuted} />
-          </View>
+            <Ionicons name="search" size={18} color={COLORS.primaryBlue} />
+          </Pressable>
           
-          <Pressable style={styles.iconButton} onPress={navigateToNotifications}>
+          <Pressable style={styles.iconButton} onPress={() => setShowAccountMenu(true)}>
             <Ionicons name="person-circle" size={28} color="white" />
           </Pressable>
-          <Pressable style={styles.iconButton} onPress={navigateToSettings}>
+          
+          <Pressable style={styles.iconButton} onPress={navigateToNotifications}>
             <Ionicons name="notifications" size={24} color="white" />
           </Pressable>
         </View>
@@ -75,10 +83,7 @@ export default function ProfileScreen() {
       >
         {/* Profile card */}
         <View style={styles.profileCard}>
-          <Image
-            source={{ uri: USER_PROFILE.avatar }}
-            style={styles.avatar}
-          />
+          <Image source={{ uri: USER_PROFILE.avatar }} style={styles.avatar} />
           <View style={styles.profileInfo}>
             <Text style={styles.profileName}>{USER_PROFILE.name}</Text>
             <Text style={styles.profileEmail}>{USER_PROFILE.email}</Text>
@@ -109,38 +114,96 @@ export default function ProfileScreen() {
         {/* Portfolio section */}
         <Text style={styles.sectionTitle}>Mi Portafolio</Text>
         
-        {PORTFOLIO_EVENTS.map((event) => (
-          <View key={event.id} style={styles.eventCard}>
-            <Pressable style={styles.eventCardHeader}>
-              <View style={styles.eventCardLeft}>
-                <View style={styles.eventIconContainer}>
-                  <Image
-                    source={require('@/assets/images/devpal-mascot.png')}
-                    style={styles.eventIcon}
-                    resizeMode="contain"
+        {PORTFOLIO_EVENTS.map((event) => {
+          const isExpanded = expandedEvent === event.id;
+          return (
+            <View key={event.id} style={styles.eventCard}>
+              <View style={styles.eventCardHeader}>
+                <View style={styles.eventCardLeft}>
+                  <View style={styles.eventIconContainer}>
+                    <Image
+                      source={require('@/assets/images/devpal-mascot.png')}
+                      style={styles.eventIcon}
+                      resizeMode="contain"
+                    />
+                  </View>
+                  <View style={styles.eventDetails}>
+                    <Text style={styles.eventTitle}>{event.title}</Text>
+                  </View>
+                </View>
+                
+                <Pressable 
+                  style={styles.moreInfoButton}
+                  onPress={() => setExpandedEvent(isExpanded ? null : event.id)}
+                >
+                  <Text style={styles.moreInfoText}>Más información</Text>
+                  <Ionicons 
+                    name={isExpanded ? "chevron-up" : "chevron-down"} 
+                    size={16} 
+                    color={COLORS.textMuted} 
                   />
-                </View>
-                <View style={styles.eventDetails}>
-                  <Text style={styles.eventTitle}>{event.title}</Text>
-                  <Text style={styles.eventDate}>{event.date}</Text>
-                </View>
+                </Pressable>
               </View>
               
-              <View style={[
-                styles.statusBadge,
-                event.status === 'Ganador' && styles.statusBadgeHighlight
-              ]}>
-                <Text style={[
-                  styles.statusText,
-                  event.status === 'Ganador' && styles.statusTextHighlight
-                ]}>
-                  {event.status}
-                </Text>
-              </View>
+              {isExpanded && (
+                <View style={styles.eventExpanded}>
+                  <View style={styles.eventDetail}>
+                    <Ionicons name="calendar-outline" size={16} color={COLORS.primaryBlue} />
+                    <Text style={styles.eventDetailText}>{event.date}</Text>
+                  </View>
+                  <View style={styles.eventDetail}>
+                    <Ionicons name="time-outline" size={16} color={COLORS.primaryBlue} />
+                    <Text style={styles.eventDetailText}>{event.time}</Text>
+                  </View>
+                  <View style={styles.eventDetail}>
+                    <Ionicons name="location-outline" size={16} color={COLORS.primaryBlue} />
+                    <Text style={styles.eventDetailText}>{event.location}</Text>
+                  </View>
+                  <View style={styles.statusRow}>
+                    <Text style={styles.statusLabel}>Estado:</Text>
+                    <View style={[
+                      styles.statusBadge,
+                      event.status === 'Ganador' && styles.statusBadgeHighlight
+                    ]}>
+                      <Text style={[
+                        styles.statusText,
+                        event.status === 'Ganador' && styles.statusTextHighlight
+                      ]}>
+                        {event.status}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              )}
+            </View>
+          );
+        })}
+      </ScrollView>
+      
+      {/* Account Dropdown Modal */}
+      <Modal
+        visible={showAccountMenu}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowAccountMenu(false)}
+      >
+        <Pressable 
+          style={styles.modalOverlay}
+          onPress={() => setShowAccountMenu(false)}
+        >
+          <View style={styles.accountDropdown}>
+            <Pressable style={styles.dropdownItem} onPress={navigateToSettings}>
+              <Ionicons name="settings-outline" size={20} color={COLORS.darkBg} />
+              <Text style={styles.dropdownItemText}>Configuración</Text>
+            </Pressable>
+            <View style={styles.dropdownDivider} />
+            <Pressable style={styles.dropdownItem} onPress={handleLogout}>
+              <Ionicons name="log-out-outline" size={20} color="#EF4444" />
+              <Text style={[styles.dropdownItemText, { color: '#EF4444' }]}>Cerrar sesión</Text>
             </Pressable>
           </View>
-        ))}
-      </ScrollView>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -148,9 +211,10 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.primaryBlue,
+    backgroundColor: COLORS.white,
   },
   header: {
+    backgroundColor: COLORS.primaryBlue,
     paddingTop: 48,
     paddingHorizontal: 16,
     paddingBottom: 16,
@@ -172,7 +236,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingVertical: 10,
   },
   searchText: {
     color: COLORS.textMuted,
@@ -183,9 +247,6 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
-    backgroundColor: COLORS.white,
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
   },
   scrollContent: {
     padding: 20,
@@ -283,25 +344,93 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
-  eventDate: {
-    color: 'rgba(255,255,255,0.7)',
-    fontSize: 12,
-  },
-  statusBadge: {
+  moreInfoButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: COLORS.white,
     paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingVertical: 8,
     borderRadius: 16,
+    gap: 4,
+  },
+  moreInfoText: {
+    color: COLORS.textMuted,
+    fontSize: 12,
+  },
+  eventExpanded: {
+    backgroundColor: COLORS.white,
+    padding: 16,
+    gap: 10,
+  },
+  eventDetail: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  eventDetailText: {
+    color: COLORS.darkBg,
+    fontSize: 14,
+  },
+  statusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 4,
+  },
+  statusLabel: {
+    color: COLORS.darkBg,
+    fontSize: 14,
+  },
+  statusBadge: {
+    backgroundColor: COLORS.primaryBlue,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
   statusBadgeHighlight: {
     backgroundColor: COLORS.accentCyan,
   },
   statusText: {
-    color: COLORS.textMuted,
+    color: COLORS.white,
     fontSize: 12,
     fontWeight: '600',
   },
   statusTextHighlight: {
     color: COLORS.darkBg,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    justifyContent: 'flex-start',
+    alignItems: 'flex-end',
+    paddingTop: 100,
+    paddingRight: 16,
+  },
+  accountDropdown: {
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
+    paddingVertical: 8,
+    minWidth: 180,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 10,
+  },
+  dropdownItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    gap: 12,
+  },
+  dropdownItemText: {
+    fontSize: 16,
+    color: COLORS.darkBg,
+  },
+  dropdownDivider: {
+    height: 1,
+    backgroundColor: COLORS.inputGray,
+    marginHorizontal: 16,
   },
 });

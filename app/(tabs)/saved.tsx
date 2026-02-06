@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, ScrollView, Pressable, TextInput, StyleSheet, Image } from "react-native";
+import { View, Text, ScrollView, Pressable, StyleSheet, Image, Modal } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -16,26 +16,32 @@ const COLORS = {
 
 // Saved events
 const SAVED_EVENTS = [
-  { id: '1', title: 'Hackathon Nacional 2024', date: '10 Feb', location: 'Centro de Convenciones' },
-  { id: '2', title: 'Conferencia DevOps México', date: '2 Feb', location: 'Auditorio Principal' },
-  { id: '3', title: 'Taller React Native', date: '28 Ene', location: 'Startup Campus' },
+  { id: '1', title: 'Hackathon Nacional 2024', date: '10 Feb', location: 'Centro de Convenciones', time: '9:00 AM' },
+  { id: '2', title: 'Conferencia DevOps México', date: '2 Feb', location: 'Auditorio Principal', time: '10:00 AM' },
+  { id: '3', title: 'Taller React Native', date: '28 Ene', location: 'Startup Campus', time: '2:00 PM' },
 ];
 
-/**
- * Saved/Favorites Screen
- */
 export default function SavedScreen() {
   const router = useRouter();
   const [expandedEvent, setExpandedEvent] = useState<string | null>(null);
+  const [showAccountMenu, setShowAccountMenu] = useState(false);
 
+  const navigateToSearch = () => router.push('/search');
   const navigateToNotifications = () => router.push('/notifications');
-  const navigateToSettings = () => router.push('/settings');
+  const navigateToSettings = () => {
+    setShowAccountMenu(false);
+    router.push('/settings');
+  };
+  const handleLogout = () => {
+    setShowAccountMenu(false);
+    router.replace('/(auth)/welcome');
+  };
 
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
       
-      {/* Header */}
+      {/* SOLID BLUE Header */}
       <View style={styles.header}>
         <View style={styles.searchRow}>
           <Image
@@ -44,15 +50,16 @@ export default function SavedScreen() {
             resizeMode="contain"
           />
           
-          <View style={styles.searchContainer}>
+          <Pressable style={styles.searchContainer} onPress={navigateToSearch}>
             <Text style={styles.searchText}>Buscar</Text>
-            <Ionicons name="search" size={18} color={COLORS.textMuted} />
-          </View>
+            <Ionicons name="search" size={18} color={COLORS.primaryBlue} />
+          </Pressable>
           
-          <Pressable style={styles.iconButton} onPress={navigateToNotifications}>
+          <Pressable style={styles.iconButton} onPress={() => setShowAccountMenu(true)}>
             <Ionicons name="person-circle" size={28} color="white" />
           </Pressable>
-          <Pressable style={styles.iconButton} onPress={navigateToSettings}>
+          
+          <Pressable style={styles.iconButton} onPress={navigateToNotifications}>
             <Ionicons name="notifications" size={24} color="white" />
           </Pressable>
         </View>
@@ -74,62 +81,91 @@ export default function SavedScreen() {
           </Pressable>
         </View>
         
-        {/* Section title */}
         <Text style={styles.sectionTitle}>Próximos eventos</Text>
         
-        {/* Event cards */}
-        {SAVED_EVENTS.map((event) => (
-          <View key={event.id} style={styles.eventCard}>
-            <Pressable
-              style={styles.eventCardHeader}
-              onPress={() => setExpandedEvent(
-                expandedEvent === event.id ? null : event.id
-              )}
-            >
-              <View style={styles.eventCardLeft}>
-                <View style={styles.eventIconContainer}>
-                  <Image
-                    source={require('@/assets/images/devpal-mascot.png')}
-                    style={styles.eventIcon}
-                    resizeMode="contain"
-                  />
+        {/* Event cards with dropdowns */}
+        {SAVED_EVENTS.map((event) => {
+          const isExpanded = expandedEvent === event.id;
+          return (
+            <View key={event.id} style={styles.eventCard}>
+              <View style={styles.eventCardHeader}>
+                <View style={styles.eventCardLeft}>
+                  <View style={styles.eventIconContainer}>
+                    <Image
+                      source={require('@/assets/images/devpal-mascot.png')}
+                      style={styles.eventIcon}
+                      resizeMode="contain"
+                    />
+                  </View>
+                  <Text style={styles.eventTitle} numberOfLines={1}>
+                    {event.title}
+                  </Text>
                 </View>
-                <Text style={styles.eventTitle} numberOfLines={1}>
-                  {event.title}
-                </Text>
-              </View>
-              
-              <Pressable style={styles.moreInfoButton}>
-                <Text style={styles.moreInfoText}>Más información</Text>
-                <Ionicons 
-                  name={expandedEvent === event.id ? "chevron-up" : "chevron-down"} 
-                  size={16} 
-                  color={COLORS.textMuted} 
-                />
-              </Pressable>
-            </Pressable>
-            
-            {expandedEvent === event.id && (
-              <View style={styles.eventExpanded}>
-                <View style={styles.eventDetail}>
-                  <Ionicons name="calendar-outline" size={16} color={COLORS.primaryBlue} />
-                  <Text style={styles.eventDetailText}>{event.date}</Text>
-                </View>
-                <View style={styles.eventDetail}>
-                  <Ionicons name="location-outline" size={16} color={COLORS.primaryBlue} />
-                  <Text style={styles.eventDetailText}>{event.location}</Text>
-                </View>
+                
                 <Pressable 
-                  style={styles.viewButton}
-                  onPress={() => router.push(`/event/${event.id}`)}
+                  style={styles.moreInfoButton}
+                  onPress={() => setExpandedEvent(isExpanded ? null : event.id)}
                 >
-                  <Text style={styles.viewButtonText}>Ver evento</Text>
+                  <Text style={styles.moreInfoText}>Más información</Text>
+                  <Ionicons 
+                    name={isExpanded ? "chevron-up" : "chevron-down"} 
+                    size={16} 
+                    color={COLORS.textMuted} 
+                  />
                 </Pressable>
               </View>
-            )}
-          </View>
-        ))}
+              
+              {isExpanded && (
+                <View style={styles.eventExpanded}>
+                  <View style={styles.eventDetail}>
+                    <Ionicons name="calendar-outline" size={16} color={COLORS.primaryBlue} />
+                    <Text style={styles.eventDetailText}>{event.date}</Text>
+                  </View>
+                  <View style={styles.eventDetail}>
+                    <Ionicons name="time-outline" size={16} color={COLORS.primaryBlue} />
+                    <Text style={styles.eventDetailText}>{event.time}</Text>
+                  </View>
+                  <View style={styles.eventDetail}>
+                    <Ionicons name="location-outline" size={16} color={COLORS.primaryBlue} />
+                    <Text style={styles.eventDetailText}>{event.location}</Text>
+                  </View>
+                  <Pressable 
+                    style={styles.viewButton}
+                    onPress={() => router.push(`/event/${event.id}`)}
+                  >
+                    <Text style={styles.viewButtonText}>Ver evento</Text>
+                  </Pressable>
+                </View>
+              )}
+            </View>
+          );
+        })}
       </ScrollView>
+      
+      {/* Account Dropdown Modal */}
+      <Modal
+        visible={showAccountMenu}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowAccountMenu(false)}
+      >
+        <Pressable 
+          style={styles.modalOverlay}
+          onPress={() => setShowAccountMenu(false)}
+        >
+          <View style={styles.accountDropdown}>
+            <Pressable style={styles.dropdownItem} onPress={navigateToSettings}>
+              <Ionicons name="settings-outline" size={20} color={COLORS.darkBg} />
+              <Text style={styles.dropdownItemText}>Configuración</Text>
+            </Pressable>
+            <View style={styles.dropdownDivider} />
+            <Pressable style={styles.dropdownItem} onPress={handleLogout}>
+              <Ionicons name="log-out-outline" size={20} color="#EF4444" />
+              <Text style={[styles.dropdownItemText, { color: '#EF4444' }]}>Cerrar sesión</Text>
+            </Pressable>
+          </View>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -137,9 +173,10 @@ export default function SavedScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.primaryBlue,
+    backgroundColor: COLORS.white,
   },
   header: {
+    backgroundColor: COLORS.primaryBlue,
     paddingTop: 48,
     paddingHorizontal: 16,
     paddingBottom: 16,
@@ -161,7 +198,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingVertical: 10,
   },
   searchText: {
     color: COLORS.textMuted,
@@ -172,9 +209,6 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
-    backgroundColor: COLORS.white,
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
   },
   scrollContent: {
     padding: 20,
@@ -248,7 +282,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: COLORS.white,
     paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingVertical: 8,
     borderRadius: 16,
     gap: 4,
   },
@@ -259,12 +293,12 @@ const styles = StyleSheet.create({
   eventExpanded: {
     backgroundColor: COLORS.white,
     padding: 16,
-    gap: 8,
+    gap: 10,
   },
   eventDetail: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
   },
   eventDetailText: {
     color: COLORS.darkBg,
@@ -273,12 +307,47 @@ const styles = StyleSheet.create({
   viewButton: {
     backgroundColor: COLORS.primaryBlue,
     borderRadius: 8,
-    paddingVertical: 10,
+    paddingVertical: 12,
     alignItems: 'center',
     marginTop: 8,
   },
   viewButtonText: {
     color: COLORS.white,
     fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    justifyContent: 'flex-start',
+    alignItems: 'flex-end',
+    paddingTop: 100,
+    paddingRight: 16,
+  },
+  accountDropdown: {
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
+    paddingVertical: 8,
+    minWidth: 180,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 10,
+  },
+  dropdownItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    gap: 12,
+  },
+  dropdownItemText: {
+    fontSize: 16,
+    color: COLORS.darkBg,
+  },
+  dropdownDivider: {
+    height: 1,
+    backgroundColor: COLORS.inputGray,
+    marginHorizontal: 16,
   },
 });
