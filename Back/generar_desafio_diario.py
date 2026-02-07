@@ -2,6 +2,7 @@ import time
 from google import genai
 
 
+
 def generar_desafio_diario(client, user_info, historia_desafios):
     
     lista_historial = ", ".join(historia_desafios) if historia_desafios else "Ninguno"
