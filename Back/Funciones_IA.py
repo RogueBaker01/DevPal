@@ -10,13 +10,7 @@ from generar_pista import generar_pista
 
 client = genai.Client(api_key=api_key())
 
-informacion_usuario = {
-    "nombre": "Bernardo",
-    "edad": 21,
-    "intereses": ["Machine Learning", "Sim Racing", "AWS", "Backend"],
-    "nivel": "Intermedio", 
-    "lenguajes": ["Python", "C++", "C# (Unity)"] 
-}
+informacion_usuario = {}
 
 desafios_anteriores = [
     "Calculadora de Propinas",

@@ -28,10 +28,10 @@ def nombre_usuario_db_azure():
         raise ValueError("NOMBRE_USUARIO_DB_AZURE no encontrada en variables de entorno. Verifica tu archivo .env")
     return nombre
 
-def contraseña_db_azure():
-    contraseña = os.getenv("CONTRASEÑA_DB_AZURE")
+def contrasena_db_azure():
+    contraseña = os.getenv("CONTRASENA_DB_AZURE")
     if not contraseña:
-        raise ValueError("CONTRASEÑA_DB_AZURE no encontrada en variables de entorno. Verifica tu archivo .env")
+        raise ValueError("CONTRASENA_DB_AZURE no encontrada en variables de entorno. Verifica tu archivo .env")
     return contraseña
 
 
