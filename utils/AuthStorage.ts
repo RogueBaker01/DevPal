@@ -11,6 +11,8 @@ const KEYS = {
     USER_EMAIL: 'user_email',
     USER_INFO: 'user_info',
     REMEMBER_ME: 'remember_me',
+    // Key used by services (AsyncStorage)
+    ASYNC_USER_ID: 'userId',
 };
 
 export const AuthStorage = {
@@ -21,6 +23,9 @@ export const AuthStorage = {
         try {
             // Guardar userId de forma segura
             await SecureStore.setItemAsync(KEYS.USER_ID, userData.user_id);
+
+            // Guardar userId también en AsyncStorage para compatibilidad con servicios
+            await AsyncStorage.setItem(KEYS.ASYNC_USER_ID, userData.user_id);
 
             // Guardar email si "Recuérdame" está activo
             if (rememberMe && userData.email) {
@@ -110,9 +115,10 @@ export const AuthStorage = {
             await SecureStore.deleteItemAsync(KEYS.USER_ID);
             await SecureStore.deleteItemAsync(KEYS.USER_EMAIL);
 
-            // Eliminar datos de AsyncStorage
+            // Eliminar datos de AsyncStorage (incluido userId usado por servicios)
             await AsyncStorage.removeItem(KEYS.USER_INFO);
             await AsyncStorage.removeItem(KEYS.REMEMBER_ME);
+            await AsyncStorage.removeItem(KEYS.ASYNC_USER_ID);
 
             console.log('✅ Sesión cerrada exitosamente');
         } catch (error) {

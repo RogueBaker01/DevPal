@@ -17,6 +17,7 @@ interface ActiveHeaderProps {
     title?: string;
     showSearch?: boolean;
     unreadNotifications?: number;
+    userAvatarUrl?: string | null;
     onAccountPress: () => void;
 }
 
@@ -24,6 +25,7 @@ export function ActiveHeader({
     title,
     showSearch = true,
     unreadNotifications = 0,
+    userAvatarUrl,
     onAccountPress
 }: ActiveHeaderProps) {
     const router = useRouter();
@@ -51,10 +53,14 @@ export function ActiveHeader({
                     )}
 
                     <Pressable
-                        style={styles.iconButton}
+                        style={[styles.iconButton, userAvatarUrl && styles.avatarButton]}
                         onPress={onAccountPress}
                     >
-                        <Ionicons name="person-circle-outline" size={28} color={GLASS.textPrimary} />
+                        {userAvatarUrl ? (
+                            <Image source={{ uri: userAvatarUrl }} style={styles.avatarImage} />
+                        ) : (
+                            <Ionicons name="person-circle-outline" size={28} color={GLASS.textPrimary} />
+                        )}
                     </Pressable>
 
                     <Pressable style={styles.iconButton} onPress={navigateToNotifications}>
@@ -108,6 +114,16 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         borderWidth: 1,
         borderColor: GLASS.border,
+    },
+    avatarButton: {
+        padding: 4,
+        borderRadius: 20,
+        overflow: 'hidden',
+    },
+    avatarImage: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
     },
     badge: {
         position: 'absolute',

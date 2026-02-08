@@ -233,19 +233,24 @@ async def get_user_profile(
             "timestamp": ue.updated_at
         })
 
-    # 2. Recent Challenges
-    recent_challenges = db.query(DesafioDiario).filter(
-        DesafioDiario.usuario_id == user_id
-    ).order_by(desc(DesafioDiario.created_at)).limit(5).all()
+    # 2. Recent Challenges (usando ProgresoDesafioDiario)
+    from app.models.db_models import ProgresoDesafioDiario
     
-    for d in recent_challenges:
-        date_ref = d.completado_at if d.completado_at else d.created_at
-        is_completed = d.estado == 'completado'
+    recent_challenge_progress = db.query(ProgresoDesafioDiario, DesafioDiario).join(
+        DesafioDiario,
+        ProgresoDesafioDiario.desafio_id == DesafioDiario.id
+    ).filter(
+        ProgresoDesafioDiario.usuario_id == user_id
+    ).order_by(desc(ProgresoDesafioDiario.created_at)).limit(5).all()
+    
+    for progreso, desafio in recent_challenge_progress:
+        date_ref = progreso.completado_at if progreso.completado_at else progreso.created_at
+        is_completed = progreso.estado == 'completado'
         
         activities.append({
-            "id": str(d.id),
+            "id": str(desafio.id),
             "type": "challenge",
-            "title": d.titulo,
+            "title": desafio.titulo,
             "date": date_ref.strftime("%d %b %Y") if date_ref else "",
             "status": "Completado" if is_completed else "Pendiente",
             "icon": "code-slash",

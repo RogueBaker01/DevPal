@@ -5,7 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BlurView } from 'expo-blur';
-import { AuthStorage } from '@/utils/AuthStorage';
+import { useAuth } from '@/contexts/AuthContext';
 
 // GLASS Tokens
 const GLASS = {
@@ -20,6 +20,7 @@ const GLASS = {
 
 export default function SettingsScreen() {
     const router = useRouter();
+    const { signOut } = useAuth();
     const [notifications, setNotifications] = useState(true);
 
     useEffect(() => {
@@ -56,8 +57,8 @@ export default function SettingsScreen() {
                     text: "Salir",
                     style: "destructive",
                     onPress: async () => {
-                        await AuthStorage.clearSession(); // Clean session properly
-                        router.replace('/(auth)/welcome'); // Go to start
+                        await signOut(); // Limpia sesión y actualiza estado global
+                        // La navegación se maneja automáticamente por AuthContext
                     }
                 }
             ]

@@ -37,13 +37,10 @@ def ejecutar_codigo_python(codigo: str, casos_prueba: List[Dict[str, Any]]) -> D
     }
     
     try:
-        # ✅ SANITIZACIÓN: Reemplazar caracteres Unicode problemáticos
         codigo_limpio = codigo
-        # Comillas tipográficas → comillas normales
-        codigo_limpio = codigo_limpio.replace('"', '"').replace('"', '"')  # U+201C, U+201D
-        codigo_limpio = codigo_limpio.replace(''', "'").replace(''', "'")  # U+2018, U+2019
-        # Guiones largos → guiones normales
-        codigo_limpio = codigo_limpio.replace('—', '-').replace('–', '-')  # U+2014, U+2013
+        codigo_limpio = codigo_limpio.replace('"', '"').replace('"', '"')
+        codigo_limpio = codigo_limpio.replace(''', "'").replace(''', "'")
+        codigo_limpio = codigo_limpio.replace('—', '-').replace('–', '-')
         
         # Crear namespace para la ejecución
         namespace = {}

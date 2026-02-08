@@ -20,6 +20,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { COLORS, RADIUS, SPACING, TYPOGRAPHY, SHADOWS } from "@/constants/designTokens";
 import { AuthService } from "@/services/authService";
 import { ProgressCircle } from "@/components/ProgressCircle";
+import { useAuth } from "@/contexts/AuthContext";
 import { BASE_URL } from "@/constants/Config";
 
 // ... (lines 23-149)
@@ -37,6 +38,7 @@ const GLASS = {
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const { signOut } = useAuth();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showProjectModal, setShowProjectModal] = useState(false);
@@ -108,8 +110,9 @@ export default function ProfileScreen() {
   };
 
   const handleLogout = async () => {
-    await AuthService.logout();
-    router.replace('/(auth)/welcome');
+    setShowAccountMenu(false);
+    await signOut();
+    // La navegación se maneja automáticamente por AuthContext
   };
 
   const handlePickAvatar = async () => {

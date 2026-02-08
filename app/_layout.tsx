@@ -1,12 +1,12 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
-import { Stack, useRouter, useSegments } from 'expo-router';
+import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import 'react-native-reanimated';
 import "../global.css";
-import { AuthStorage } from '@/utils/AuthStorage';
+import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 
 import { useColorScheme } from '@/components/useColorScheme';
 
@@ -44,51 +44,20 @@ export default function RootLayout() {
     return null;
   }
 
-  return <RootLayoutNav />;
+  return (
+    <AuthProvider>
+      <RootLayoutNav />
+    </AuthProvider>
+  );
 }
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
-  const router = useRouter();
-  const segments = useSegments();
-  const [isAuthChecked, setIsAuthChecked] = useState(false);
-
-  // ✅ Auto-login: Check if user has active session
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const hasSession = await AuthStorage.hasActiveSession();
-        const userId = await AuthStorage.getUserId();
-
-        console.log('🔐 Checking auth:', { hasSession, userId });
-
-        if (hasSession && userId) {
-          // ✅ Usuario tiene sesión activa, navegar a tabs
-          console.log('✅ Active session found, navigating to tabs');
-          const inTabsGroup = segments[0] === '(tabs)';
-          if (!inTabsGroup) {
-            router.replace('/(tabs)');
-          }
-        } else {
-          // No hay sesión, asegurar que esté en auth
-          console.log('❌ No session, navigating to auth');
-          const inAuthGroup = segments[0] === '(auth)';
-          if (!inAuthGroup) {
-            router.replace('/(auth)/login');
-          }
-        }
-      } catch (error) {
-        console.error('Error checking auth:', error);
-      } finally {
-        setIsAuthChecked(true);
-      }
-    };
-
-    checkAuth();
-  }, []);
+  const { isLoading } = useAuth();
 
   // No renderizar hasta verificar auth para evitar flickering
-  if (!isAuthChecked) {
+  // La navegación automática se maneja en AuthContext
+  if (isLoading) {
     return null;
   }
 

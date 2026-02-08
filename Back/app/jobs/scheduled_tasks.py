@@ -46,39 +46,26 @@ async def job_generar_eventos():
 
 
 async def job_generar_desafios_diarios():
-    logger.info("Iniciando generación de desafíos diarios...")
+    """
+    Genera UN único desafío global del día para todos los usuarios.
+    Se ejecuta a medianoche.
+    """
+    logger.info("Iniciando generación de desafío diario global...")
     try:
-        from app.models.db_models import Usuario, PerfilUsuario
-        
         db = SessionLocal()
-        
-        usuarios = db.query(Usuario).join(PerfilUsuario).all()
-        
         ia_service = IAService(db)
         
-        total_generados = 0
-        for usuario in usuarios:
-            perfil = usuario.perfil
-            
-            user_info = {
-                "nombre": usuario.nombre,
-                "nivel": perfil.nivel if perfil else 1,
-                "intereses": [i.interes for i in usuario.intereses] if usuario.intereses else ["Programación general"],
-                "lenguajes": [l.lenguaje for l in usuario.lenguajes] if usuario.lenguajes else ["Python"]
-            }
-            
-            desafio = ia_service.generar_y_guardar_desafio(
-                usuario_id=str(usuario.id),
-                user_info=user_info
-            )
-            
-            if desafio:
-                total_generados += 1
+        # Generar un único desafío global
+        desafio = await ia_service.generar_desafio_global()
         
-        logger.info(f"Desafíos diarios generados: {total_generados} usuarios")
+        if desafio:
+            logger.info(f"Desafío global del día generado: {desafio.titulo}")
+        else:
+            logger.warning("No se pudo generar el desafío global del día")
+        
         db.close()
     except Exception as e:
-        logger.error(f"Error al generar desafíos diarios: {str(e)}")
+        logger.error(f"Error al generar desafío diario global: {str(e)}")
 
 
 def start_scheduler():

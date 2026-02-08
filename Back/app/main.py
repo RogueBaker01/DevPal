@@ -16,20 +16,17 @@ app = FastAPI(
 
 from fastapi.staticfiles import StaticFiles
 
-# ✅ Rate Limiting Middleware (personalizado, sin SlowAPI)
 app.add_middleware(CustomRateLimitMiddleware)
 
-# ✅ Mount Static Files
 if not os.path.exists("static/uploads"):
     os.makedirs("static/uploads", exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# Validación de CORS en producción
 if not settings.is_development and settings.CORS_ORIGINS == "*":
-    raise ValueError("⚠️ CORS='*' no está permitido en producción. Define orígenes específicos.")
+    raise ValueError("CORS='*' no esta permitido en produccion. Define origenes especificos.")
 
 if settings.CORS_ORIGINS == "*":
-    print("⚠️ CORS configurado como '*' - INSEGURO para producción")
+    print("CORS configurado como '*' - INSEGURO para produccion")
 
 # Configurar CORS
 app.add_middleware(
@@ -44,14 +41,13 @@ app.add_middleware(
 # but incorporating the new validation logic from the snippet)
 @app.on_event("startup")
 async def validate_security_config():
-    """Valida configuración de seguridad al iniciar."""
     if settings.CORS_ORIGINS == "*" or (settings.cors_origins_list and settings.cors_origins_list[0] == "*"):
-        logger.warning("⚠️ CORS configurado como '*' - INSEGURO para producción")
+        logger.warning("CORS configurado como '*' - INSEGURO para produccion")
         if os.getenv("ENVIRONMENT") == "production":
-            raise ValueError("CORS wildcard no permitido en producción. Especifica dominios en CORS_ORIGINS")
+            raise ValueError("CORS wildcard no permitido en produccion. Especifica dominios en CORS_ORIGINS")
     
-    logger.info(f"✅ CORS configurado: {settings.cors_origins_list}")
-    logger.info(f"✅ Ambiente: {getattr(settings, 'ENVIRONMENT', 'development')}")
+    logger.info(f"CORS configurado: {settings.cors_origins_list}")
+    logger.info(f"Ambiente: {getattr(settings, 'ENVIRONMENT', 'development')}")
 
 # Configurar CORS
 app.add_middleware(

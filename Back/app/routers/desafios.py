@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from typing import Annotated
 from pydantic import BaseModel
 import json
+from datetime import datetime
 from app.database import get_db
 from app.services.ia_service import IAService, get_ia_service
 from app.services.code_executor import ejecutar_codigo
@@ -16,35 +17,56 @@ async def obtener_desafio_del_dia(
     db: Annotated[Session, Depends(get_db)],
     ia_service: Annotated[IAService, Depends(get_ia_service)]
 ):
-    from app.models.db_models import DesafioDiario, Usuario
-    from datetime import datetime
+    """
+    Obtiene el desafío global del día y el progreso del usuario.
+    Si no existe desafío para hoy, lo genera automáticamente.
+    """
+    from app.models.db_models import DesafioDiario, ProgresoDesafioDiario, Usuario
     
     hoy = datetime.now().date()
+    
+    # Buscar el desafío global del día
     desafio = db.query(DesafioDiario).filter(
-        DesafioDiario.usuario_id == usuario_id,
-        DesafioDiario.created_at >= hoy
+        DesafioDiario.fecha == hoy
     ).first()
     
+    # Si no existe, generar uno nuevo (desafío global)
     if not desafio:
-        usuario = db.query(Usuario).filter(Usuario.id == usuario_id).first()
-        if not usuario:
-            raise HTTPException(status_code=404, detail="Usuario no encontrado")
-        
-        perfil = usuario.perfil
-        user_info = {
-            "nombre": usuario.nombre,
-            "nivel": perfil.nivel if perfil else 1,
-            "intereses": [i.interes for i in usuario.intereses] if usuario.intereses else ["Python"],
-            "lenguajes": [l.lenguaje for l in usuario.lenguajes] if usuario.lenguajes else ["Python"]
-        }
-        desafio = await ia_service.generar_y_guardar_desafio(usuario_id, user_info)
+        desafio = await ia_service.generar_desafio_global()
+        if not desafio:
+            raise HTTPException(
+                status_code=500,
+                detail="No se pudo generar el desafío del día"
+            )
     
-    # Serializar el desafío con nombres de campos amigables para el frontend
-    return serialize_desafio(desafio)
+    # Verificar que el usuario existe
+    usuario = db.query(Usuario).filter(Usuario.id == usuario_id).first()
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    
+    # Buscar o crear el progreso del usuario para este desafío
+    progreso = db.query(ProgresoDesafioDiario).filter(
+        ProgresoDesafioDiario.usuario_id == usuario_id,
+        ProgresoDesafioDiario.desafio_id == desafio.id
+    ).first()
+    
+    if not progreso:
+        # Crear registro de progreso para el usuario
+        progreso = ProgresoDesafioDiario(
+            usuario_id=usuario_id,
+            desafio_id=desafio.id,
+            estado='pendiente'
+        )
+        db.add(progreso)
+        db.commit()
+        db.refresh(progreso)
+    
+    # Serializar el desafío con el estado del usuario
+    return serialize_desafio_con_progreso(desafio, progreso)
 
 
-def serialize_desafio(desafio) -> dict:
-    """Convierte un objeto DesafioDiario a diccionario con nombres amigables para el frontend."""
+def serialize_desafio_con_progreso(desafio, progreso=None) -> dict:
+    """Convierte un objeto DesafioDiario y su progreso a diccionario."""
     if desafio is None:
         return None
     
@@ -59,9 +81,9 @@ def serialize_desafio(desafio) -> dict:
                 return default
         return value
     
-    return {
+    resultado = {
         "id": str(desafio.id),
-        "usuario_id": str(desafio.usuario_id),
+        "fecha": desafio.fecha.isoformat() if desafio.fecha else None,
         "titulo": desafio.titulo,
         "lenguaje_recomendado": desafio.lenguaje_recomendado,
         "contexto_negocio": desafio.contexto_negocio,
@@ -70,35 +92,56 @@ def serialize_desafio(desafio) -> dict:
         "restricciones": parse_json_field(desafio.restricciones_json, {}),
         "casos_prueba": parse_json_field(desafio.casos_prueba_json, []),
         "pista": desafio.pista,
-        "estado": desafio.estado,
         "dificultad": desafio.dificultad,
         "xp_recompensa": desafio.xp_recompensa,
         "created_at": desafio.created_at.isoformat() if desafio.created_at else None,
-        "completado_at": desafio.completado_at.isoformat() if desafio.completado_at else None,
     }
+    
+    # Agregar información de progreso del usuario si existe
+    if progreso:
+        resultado["estado"] = progreso.estado
+        resultado["completado_at"] = progreso.completado_at.isoformat() if progreso.completado_at else None
+        resultado["progreso_id"] = str(progreso.id)
+    else:
+        resultado["estado"] = "pendiente"
+        resultado["completado_at"] = None
+        resultado["progreso_id"] = None
+    
+    return resultado
+
+
+# Mantener compatibilidad con código antiguo
+def serialize_desafio(desafio) -> dict:
+    """Función de compatibilidad - usa serialize_desafio_con_progreso"""
+    return serialize_desafio_con_progreso(desafio, None)
 
 
 @router.post("/generar")
 async def generar_nuevo_desafio(
-    usuario_id: str,
     db: Annotated[Session, Depends(get_db)],
     ia_service: Annotated[IAService, Depends(get_ia_service)]
 ):
-    from app.models.db_models import Usuario
+    """
+    Genera un nuevo desafío global del día (solo si no existe uno para hoy).
+    Este endpoint puede ser llamado por un job programado o manualmente.
+    """
+    from app.models.db_models import DesafioDiario
     
-    usuario = db.query(Usuario).filter(Usuario.id == usuario_id).first()
-    if not usuario:
-        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    hoy = datetime.now().date()
     
-    perfil = usuario.perfil
-    user_info = {
-        "nombre": usuario.nombre,
-        "nivel": perfil.nivel if perfil else 1,
-        "intereses": [i.interes for i in usuario.intereses] if usuario.intereses else ["Python", "Algoritmos"],
-        "lenguajes": [l.lenguaje for l in usuario.lenguajes] if usuario.lenguajes else ["Python", "JavaScript"]
-    }
+    # Verificar si ya existe un desafío para hoy
+    desafio_existente = db.query(DesafioDiario).filter(
+        DesafioDiario.fecha == hoy
+    ).first()
     
-    desafio = await ia_service.generar_y_guardar_desafio(usuario_id, user_info)
+    if desafio_existente:
+        return {
+            "status": "exists",
+            "desafio": serialize_desafio(desafio_existente),
+            "message": "Ya existe un desafío para hoy"
+        }
+    
+    desafio = await ia_service.generar_desafio_global()
     
     if not desafio:
         raise HTTPException(
@@ -121,20 +164,31 @@ async def obtener_historial(
     limite: int = 20,
     skip: int = 0
 ):
-    from app.models.db_models import DesafioDiario
+    """
+    Obtiene el historial de desafíos del usuario con su progreso.
+    """
+    from app.models.db_models import DesafioDiario, ProgresoDesafioDiario
     
-    query = db.query(DesafioDiario).filter(
-        DesafioDiario.usuario_id == usuario_id
+    # Consulta con join para obtener desafíos y progreso del usuario
+    query = db.query(ProgresoDesafioDiario, DesafioDiario).join(
+        DesafioDiario,
+        ProgresoDesafioDiario.desafio_id == DesafioDiario.id
+    ).filter(
+        ProgresoDesafioDiario.usuario_id == usuario_id
     )
     
     if estado:
-        query = query.filter(DesafioDiario.estado == estado)
+        query = query.filter(ProgresoDesafioDiario.estado == estado)
     
-    desafios = query.order_by(
-        DesafioDiario.created_at.desc()
+    resultados = query.order_by(
+        DesafioDiario.fecha.desc()
     ).offset(skip).limit(limite).all()
     
-    return desafios
+    # Serializar resultados
+    return [
+        serialize_desafio_con_progreso(desafio, progreso)
+        for progreso, desafio in resultados
+    ]
 
 
 @router.post("/{desafio_id}/completar")
@@ -143,19 +197,21 @@ async def marcar_completado(
     usuario_id: str,
     db: Annotated[Session, Depends(get_db)]
 ):
-    from app.models.db_models import DesafioDiario
-    from datetime import datetime
+    """
+    Marca el progreso del usuario en un desafío como completado.
+    """
+    from app.models.db_models import ProgresoDesafioDiario
     
-    desafio = db.query(DesafioDiario).filter(
-        DesafioDiario.id == desafio_id,
-        DesafioDiario.usuario_id == usuario_id
+    progreso = db.query(ProgresoDesafioDiario).filter(
+        ProgresoDesafioDiario.desafio_id == desafio_id,
+        ProgresoDesafioDiario.usuario_id == usuario_id
     ).first()
     
-    if not desafio:
-        raise HTTPException(status_code=404, detail="Desafío no encontrado")
+    if not progreso:
+        raise HTTPException(status_code=404, detail="Progreso de desafío no encontrado")
     
-    desafio.estado = 'completado'
-    desafio.completado_at = datetime.now()
+    progreso.estado = 'completado'
+    progreso.completado_at = datetime.now()
     db.commit()
     
     return {"message": "Desafío completado exitosamente"}
@@ -167,17 +223,20 @@ async def marcar_abandonado(
     usuario_id: str,
     db: Annotated[Session, Depends(get_db)]
 ):
-    from app.models.db_models import DesafioDiario
+    """
+    Marca el progreso del usuario en un desafío como abandonado.
+    """
+    from app.models.db_models import ProgresoDesafioDiario
     
-    desafio = db.query(DesafioDiario).filter(
-        DesafioDiario.id == desafio_id,
-        DesafioDiario.usuario_id == usuario_id
+    progreso = db.query(ProgresoDesafioDiario).filter(
+        ProgresoDesafioDiario.desafio_id == desafio_id,
+        ProgresoDesafioDiario.usuario_id == usuario_id
     ).first()
     
-    if not desafio:
-        raise HTTPException(status_code=404, detail="Desafío no encontrado")
+    if not progreso:
+        raise HTTPException(status_code=404, detail="Progreso de desafío no encontrado")
     
-    desafio.estado = 'abandonado'
+    progreso.estado = 'abandonado'
     db.commit()
     
     return {"message": "Desafío marcado como abandonado"}
@@ -197,17 +256,38 @@ async def ejecutar_codigo_desafio(
 ):
     """
     Ejecuta el código del usuario contra los casos de prueba del desafío.
+    Guarda el código y lenguaje usado en el progreso.
     """
-    from app.models.db_models import DesafioDiario
+    from app.models.db_models import DesafioDiario, ProgresoDesafioDiario
     
-    # Obtener el desafío
+    # Obtener el desafío global
     desafio = db.query(DesafioDiario).filter(
-        DesafioDiario.id == desafio_id,
-        DesafioDiario.usuario_id == usuario_id
+        DesafioDiario.id == desafio_id
     ).first()
     
     if not desafio:
         raise HTTPException(status_code=404, detail="Desafío no encontrado")
+    
+    # Obtener o crear el progreso del usuario
+    progreso = db.query(ProgresoDesafioDiario).filter(
+        ProgresoDesafioDiario.desafio_id == desafio_id,
+        ProgresoDesafioDiario.usuario_id == usuario_id
+    ).first()
+    
+    if not progreso:
+        progreso = ProgresoDesafioDiario(
+            usuario_id=usuario_id,
+            desafio_id=desafio_id,
+            estado='en_progreso'
+        )
+        db.add(progreso)
+    
+    # Actualizar el código y lenguaje usado
+    progreso.codigo_enviado = request.codigo
+    progreso.lenguaje_usado = request.lenguaje
+    if progreso.estado == 'pendiente':
+        progreso.estado = 'en_progreso'
+    db.commit()
     
     # Obtener casos de prueba
     casos_prueba = desafio.casos_prueba_json or []

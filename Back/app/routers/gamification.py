@@ -148,13 +148,13 @@ async def get_stats_globales(
     Returns:
         Total de usuarios activos, desafíos completados, eventos y XP generado
     """
-    from app.models.db_models import Usuario, DesafioDiario, UsuarioEvento
+    from app.models.db_models import Usuario, ProgresoDesafioDiario, UsuarioEvento
     
     try:
         total_usuarios = db.query(Usuario).count()
         
-        desafios_completados = db.query(DesafioDiario).filter(
-            DesafioDiario.estado == "completado"
+        desafios_completados = db.query(ProgresoDesafioDiario).filter(
+            ProgresoDesafioDiario.estado == "completado"
         ).count()
         
         eventos_asistidos = db.query(UsuarioEvento).filter(

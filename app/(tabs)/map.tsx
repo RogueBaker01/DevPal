@@ -33,10 +33,24 @@ export default function MapScreen() {
   const [showAccountMenu, setShowAccountMenu] = useState(false);
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
 
   useEffect(() => {
     loadEvents();
+    loadUserProfile();
   }, []);
+
+  const loadUserProfile = async () => {
+    try {
+      const { AuthService } = require('@/services/authService');
+      const profile = await AuthService.getProfile();
+      if (profile && profile.avatar_url) {
+        setUserAvatarUrl(profile.avatar_url);
+      }
+    } catch (error) {
+      console.log("Error fetching profile:", error);
+    }
+  };
 
   // Effect to handle deep linking or initial selection
   useEffect(() => {
@@ -104,8 +118,12 @@ export default function MapScreen() {
             <Ionicons name="search" size={18} color={GLASS.textSecondary} />
           </Pressable>
 
-          <Pressable style={styles.iconButton} onPress={() => setShowAccountMenu(true)}>
-            <Ionicons name="person-circle-outline" size={28} color={GLASS.textPrimary} />
+          <Pressable style={[styles.iconButton, userAvatarUrl && styles.avatarButton]} onPress={() => setShowAccountMenu(true)}>
+            {userAvatarUrl ? (
+              <Image source={{ uri: userAvatarUrl }} style={styles.avatarImage} />
+            ) : (
+              <Ionicons name="person-circle-outline" size={28} color={GLASS.textPrimary} />
+            )}
           </Pressable>
 
           <Pressable style={styles.iconButton} onPress={navigateToNotifications}>
@@ -270,6 +288,15 @@ const styles = StyleSheet.create({
     padding: 6,
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderRadius: 20,
+  },
+  avatarButton: {
+    padding: 4,
+    overflow: 'hidden',
+  },
+  avatarImage: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
   },
   // MAP
   mapContainer: {

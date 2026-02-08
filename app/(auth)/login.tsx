@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -11,48 +11,51 @@ import {
   StyleSheet,
   Dimensions,
   ActivityIndicator,
-  Alert
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { AuthService } from '@/services/authService';
+import { useAuth } from '@/contexts/AuthContext';
 
 const { width } = Dimensions.get('window');
 
-// Design tokens
-const COLORS = {
-  darkBg: '#0F172A',
-  primaryBlue: '#2563EB',
-  accentCyan: '#22D3EE',
-  white: '#FFFFFF',
-  inputGray: '#F8FAFC',
-  textMuted: '#64748B',
-  borderGray: '#E2E8F0',
+// Glass UI tokens (matching rest of app)
+const GLASS = {
+  bg: 'rgba(30, 41, 59, 0.7)',
+  bgDark: '#0F172A',
+  border: 'rgba(255, 255, 255, 0.1)',
+  textPrimary: '#F8FAFC',
+  textSecondary: '#94A3B8',
+  accent: '#22D3EE',
+  accentGradient: '#3B82F6',
+  inputBg: 'rgba(15, 23, 42, 0.6)',
+  error: '#EF4444',
+  errorBg: 'rgba(239, 68, 68, 0.15)',
 };
 
 /**
- * Login Screen - Fixed bigger logos
+ * Login Screen - Glass UI Dark Theme
  */
 export default function LoginScreen() {
   const router = useRouter();
+  const { signIn } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async () => {
-    // Validación básica
     if (!email.trim() || !password.trim()) {
-      setError('Por favor ingresa tu correo y contraseña');
+      setError('Por favor ingresa tu correo y contrasena');
       return;
     }
 
-    // Validación de formato de email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      setError('Por favor ingresa un correo válido');
+      setError('Por favor ingresa un correo valido');
       return;
     }
 
@@ -60,27 +63,26 @@ export default function LoginScreen() {
       setLoading(true);
       setError('');
 
-      // Llamar al servicio de autenticación con rememberMe
       const response = await AuthService.login(email.trim(), password, rememberMe);
 
-      // Si el login fue exitoso, navegar a la app
       if (response.user_id) {
-        router.replace('/(tabs)');
+        // Actualizar estado global de autenticación
+        await signIn({ ...response, email: email.trim() }, rememberMe);
+        // La navegación se maneja automáticamente por AuthContext
       } else {
-        setError('Error al iniciar sesión. Intenta de nuevo.');
+        setError('Error al iniciar sesion. Intenta de nuevo.');
       }
     } catch (err: any) {
       console.error('Login error:', err);
 
-      // Manejar errores específicos
       if (err.response?.status === 401) {
-        setError('Correo o contraseña incorrectos');
+        setError('Correo o contrasena incorrectos');
       } else if (err.response?.status === 500) {
-        setError('Error del servidor. Intenta más tarde.');
+        setError('Error del servidor. Intenta mas tarde.');
       } else if (err.message?.includes('Network Error')) {
-        setError('No se pudo conectar al servidor. Verifica tu conexión.');
+        setError('No se pudo conectar al servidor. Verifica tu conexion.');
       } else {
-        setError('Error al iniciar sesión. Intenta de nuevo.');
+        setError('Error al iniciar sesion. Intenta de nuevo.');
       }
     } finally {
       setLoading(false);
@@ -91,124 +93,143 @@ export default function LoginScreen() {
     <View style={styles.container}>
       <StatusBar style="light" />
 
-      {/* Blue header with bubbles and mascot */}
-      <View style={styles.header}>
-        {/* Decorative bubbles */}
-        <View style={styles.bubble1} />
-        <View style={styles.bubble2} />
-        <View style={styles.bubble3} />
+      {/* Background decorations */}
+      <View style={styles.bgCircle1} />
+      <View style={styles.bgCircle2} />
+      <View style={styles.bgCircle3} />
 
-        {/* Mascot - BIGGER */}
-        <Image
-          source={require('@/assets/images/devpal-mascot.png')}
-          style={styles.mascot}
-          resizeMode="contain"
-        />
-      </View>
-
-      {/* White form container */}
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
         <ScrollView
-          style={styles.formContainer}
+          style={styles.scrollView}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.formContent}
+          contentContainerStyle={styles.scrollContent}
         >
-          {/* Title */}
-          <Text style={styles.title}>
-            Bienvenido de regreso!
-          </Text>
-
-          {/* Form inputs */}
-          <View style={styles.inputsContainer}>
-            <TextInput
-              placeholder="Correo"
-              placeholderTextColor={COLORS.textMuted}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              value={email}
-              onChangeText={setEmail}
-              style={styles.input}
+          {/* Logo/Mascot Section */}
+          <View style={styles.logoSection}>
+            <Image
+              source={require('@/assets/images/devpal-mascot.png')}
+              style={styles.mascot}
+              resizeMode="contain"
             />
-
-            <TextInput
-              placeholder="Contraseña"
-              placeholderTextColor={COLORS.textMuted}
-              secureTextEntry
-              value={password}
-              onChangeText={setPassword}
-              style={styles.input}
-            />
+            <Text style={styles.brandText}>DevPal</Text>
           </View>
 
-          {/* Remember me + Forgot password row */}
-          <View style={styles.optionsRow}>
-            <Pressable
-              onPress={() => setRememberMe(!rememberMe)}
-              style={styles.rememberContainer}
-            >
-              <View style={[styles.checkbox, rememberMe && styles.checkboxChecked]}>
-                {rememberMe && <Ionicons name="checkmark" size={12} color="white" />}
+          {/* Glass Card Form */}
+          <View style={styles.glassCard}>
+            <Text style={styles.title}>Bienvenido de regreso!</Text>
+            <Text style={styles.subtitle}>Inicia sesion para continuar</Text>
+
+            {/* Form inputs */}
+            <View style={styles.inputsContainer}>
+              <View style={styles.inputWrapper}>
+                <Ionicons name="mail-outline" size={20} color={GLASS.textSecondary} style={styles.inputIcon} />
+                <TextInput
+                  placeholder="Correo electronico"
+                  placeholderTextColor={GLASS.textSecondary}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  value={email}
+                  onChangeText={(text) => {
+                    setEmail(text);
+                    setError('');
+                  }}
+                  style={styles.input}
+                />
               </View>
-              <Text style={styles.rememberText}>Recuerdame</Text>
-            </Pressable>
 
-            <Pressable>
-              <Text style={styles.forgotText}>¿Olvidaste tu contraseña?</Text>
-            </Pressable>
-          </View>
-
-          {/* Error message */}
-          {error ? (
-            <View style={styles.errorContainer}>
-              <Ionicons name="alert-circle" size={20} color="#EF4444" />
-              <Text style={styles.errorText}>{error}</Text>
+              <View style={styles.inputWrapper}>
+                <Ionicons name="lock-closed-outline" size={20} color={GLASS.textSecondary} style={styles.inputIcon} />
+                <TextInput
+                  placeholder="Contrasena"
+                  placeholderTextColor={GLASS.textSecondary}
+                  secureTextEntry={!showPassword}
+                  value={password}
+                  onChangeText={(text) => {
+                    setPassword(text);
+                    setError('');
+                  }}
+                  style={styles.input}
+                />
+                <Pressable onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
+                  <Ionicons 
+                    name={showPassword ? "eye-off-outline" : "eye-outline"} 
+                    size={20} 
+                    color={GLASS.textSecondary} 
+                  />
+                </Pressable>
+              </View>
             </View>
-          ) : null}
 
-          {/* Login button */}
-          <Pressable
-            onPress={handleLogin}
-            style={styles.loginButton}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color={COLORS.white} />
-            ) : (
-              <Text style={styles.loginButtonText}>
-                Iniciar sesión
-              </Text>
-            )}
-          </Pressable>
+            {/* Remember me + Forgot password */}
+            <View style={styles.optionsRow}>
+              <Pressable
+                onPress={() => setRememberMe(!rememberMe)}
+                style={styles.rememberContainer}
+              >
+                <View style={[styles.checkbox, rememberMe && styles.checkboxChecked]}>
+                  {rememberMe && <Ionicons name="checkmark" size={12} color={GLASS.bgDark} />}
+                </View>
+                <Text style={styles.rememberText}>Recuerdame</Text>
+              </Pressable>
 
-          {/* Divider */}
-          <View style={styles.dividerContainer}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>Iniciar sesión con</Text>
-            <View style={styles.dividerLine} />
-          </View>
+              <Pressable>
+                <Text style={styles.forgotText}>Olvidaste tu contrasena?</Text>
+              </Pressable>
+            </View>
 
-          {/* Social buttons - BIGGER */}
-          <View style={styles.socialContainer}>
-            <Pressable style={styles.socialButton}>
-              <Text style={styles.googleIcon}>G</Text>
+            {/* Error message */}
+            {error ? (
+              <View style={styles.errorContainer}>
+                <Ionicons name="alert-circle" size={18} color={GLASS.error} />
+                <Text style={styles.errorText}>{error}</Text>
+              </View>
+            ) : null}
+
+            {/* Login button */}
+            <Pressable
+              onPress={handleLogin}
+              style={[styles.loginButton, loading && styles.buttonDisabled]}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color={GLASS.bgDark} />
+              ) : (
+                <>
+                  <Text style={styles.loginButtonText}>Iniciar sesion</Text>
+                  <Ionicons name="arrow-forward" size={20} color={GLASS.bgDark} />
+                </>
+              )}
             </Pressable>
-            <Pressable style={styles.socialButton}>
-              <Ionicons name="logo-apple" size={28} color="#000" />
-            </Pressable>
+
+            {/* Divider */}
+            <View style={styles.dividerContainer}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>o continua con</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            {/* Social buttons */}
+            <View style={styles.socialContainer}>
+              <Pressable style={styles.socialButton}>
+                <Text style={styles.googleIcon}>G</Text>
+              </Pressable>
+              <Pressable style={styles.socialButton}>
+                <Ionicons name="logo-apple" size={24} color={GLASS.textPrimary} />
+              </Pressable>
+              <Pressable style={styles.socialButton}>
+                <Ionicons name="logo-github" size={24} color={GLASS.textPrimary} />
+              </Pressable>
+            </View>
           </View>
 
           {/* Register link */}
           <View style={styles.registerLinkContainer}>
-            <Text style={styles.registerLinkText}>
-              ¿No estas registrado?{' '}
-            </Text>
+            <Text style={styles.registerLinkText}>No tienes cuenta? </Text>
             <Pressable onPress={() => router.push('/(auth)/register')}>
-              <Text style={styles.registerLinkBold}>
-                Registrarme
-              </Text>
+              <Text style={styles.registerLinkBold}>Registrate</Text>
             </Pressable>
           </View>
         </ScrollView>
@@ -220,88 +241,110 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.primaryBlue,
+    backgroundColor: GLASS.bgDark,
   },
-  header: {
-    height: 320,
-    backgroundColor: COLORS.primaryBlue,
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    paddingBottom: 40,
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  bubble1: {
+  bgCircle1: {
     position: 'absolute',
-    width: 250,
-    height: 250,
-    borderRadius: 125,
-    backgroundColor: 'rgba(30, 64, 175, 0.5)',
-    top: -80,
+    width: 300,
+    height: 300,
+    borderRadius: 150,
+    backgroundColor: 'rgba(34, 211, 238, 0.08)',
+    top: -100,
+    right: -100,
+  },
+  bgCircle2: {
+    position: 'absolute',
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: 'rgba(59, 130, 246, 0.08)',
+    top: 200,
     left: -80,
   },
-  bubble2: {
+  bgCircle3: {
     position: 'absolute',
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    backgroundColor: 'rgba(30, 64, 175, 0.4)',
-    top: -30,
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    backgroundColor: 'rgba(34, 211, 238, 0.05)',
+    bottom: 100,
     right: -50,
-  },
-  bubble3: {
-    position: 'absolute',
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: 'rgba(59, 130, 246, 0.3)',
-    top: 100,
-    right: 40,
-  },
-  mascot: {
-    width: 220,
-    height: 220,
-    zIndex: 10,
   },
   keyboardView: {
     flex: 1,
   },
-  formContainer: {
+  scrollView: {
     flex: 1,
-    backgroundColor: COLORS.white,
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    marginTop: -30,
   },
-  formContent: {
-    padding: 32,
-    paddingBottom: 50,
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: 24,
+    paddingTop: 60,
+    paddingBottom: 40,
+  },
+  logoSection: {
+    alignItems: 'center',
+    marginBottom: 32,
+  },
+  mascot: {
+    width: 120,
+    height: 120,
+  },
+  brandText: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: GLASS.textPrimary,
+    marginTop: 8,
+  },
+  glassCard: {
+    backgroundColor: GLASS.bg,
+    borderRadius: 24,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: GLASS.border,
   },
   title: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: '700',
-    color: COLORS.primaryBlue,
+    color: GLASS.textPrimary,
     textAlign: 'center',
-    marginBottom: 32,
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 15,
+    color: GLASS.textSecondary,
+    textAlign: 'center',
+    marginBottom: 28,
   },
   inputsContainer: {
     gap: 16,
   },
-  input: {
-    backgroundColor: COLORS.white,
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: GLASS.inputBg,
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: COLORS.borderGray,
-    borderRadius: 12,
-    paddingHorizontal: 20,
+    borderColor: GLASS.border,
+    paddingHorizontal: 16,
+  },
+  inputIcon: {
+    marginRight: 12,
+  },
+  input: {
+    flex: 1,
     paddingVertical: 16,
     fontSize: 16,
-    color: COLORS.darkBg,
+    color: GLASS.textPrimary,
+  },
+  eyeIcon: {
+    padding: 4,
   },
   optionsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 16,
+    marginTop: 20,
     marginBottom: 24,
   },
   rememberContainer: {
@@ -309,25 +352,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   checkbox: {
-    width: 18,
-    height: 18,
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: COLORS.borderGray,
-    marginRight: 8,
+    width: 20,
+    height: 20,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    borderColor: GLASS.border,
+    marginRight: 10,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: 'transparent',
   },
   checkboxChecked: {
-    backgroundColor: COLORS.primaryBlue,
-    borderColor: COLORS.primaryBlue,
+    backgroundColor: GLASS.accent,
+    borderColor: GLASS.accent,
   },
   rememberText: {
-    color: COLORS.textMuted,
+    color: GLASS.textSecondary,
     fontSize: 14,
   },
   forgotText: {
-    color: COLORS.primaryBlue,
+    color: GLASS.accent,
     fontSize: 14,
     fontWeight: '500',
   },
@@ -335,30 +379,34 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#FEE2E2',
+    backgroundColor: GLASS.errorBg,
     padding: 12,
-    borderRadius: 8,
+    borderRadius: 12,
     marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.3)',
   },
   errorText: {
     flex: 1,
-    color: '#DC2626',
+    color: GLASS.error,
     fontSize: 14,
     fontWeight: '500',
   },
   loginButton: {
-    backgroundColor: COLORS.primaryBlue,
+    backgroundColor: GLASS.accent,
     height: 56,
-    borderRadius: 28,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 8,
   },
-  loginButtonDisabled: {
-    opacity: 0.6,
+  buttonDisabled: {
+    opacity: 0.7,
   },
   loginButtonText: {
-    color: COLORS.white,
-    fontSize: 18,
+    color: GLASS.bgDark,
+    fontSize: 17,
     fontWeight: '700',
   },
   dividerContainer: {
@@ -369,45 +417,45 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: COLORS.borderGray,
+    backgroundColor: GLASS.border,
   },
   dividerText: {
     marginHorizontal: 16,
-    color: COLORS.textMuted,
-    fontSize: 14,
+    color: GLASS.textSecondary,
+    fontSize: 13,
   },
   socialContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 24,
+    gap: 16,
   },
   socialButton: {
     width: 56,
     height: 56,
-    borderRadius: 28,
-    backgroundColor: COLORS.white,
+    borderRadius: 16,
+    backgroundColor: GLASS.inputBg,
     borderWidth: 1,
-    borderColor: COLORS.borderGray,
+    borderColor: GLASS.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
   googleIcon: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: '700',
-    color: '#4285F4',
+    color: GLASS.textPrimary,
   },
   registerLinkContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 24,
+    marginTop: 28,
   },
   registerLinkText: {
-    color: COLORS.textMuted,
-    fontSize: 14,
+    color: GLASS.textSecondary,
+    fontSize: 15,
   },
   registerLinkBold: {
-    color: COLORS.primaryBlue,
+    color: GLASS.accent,
     fontWeight: '700',
-    fontSize: 14,
+    fontSize: 15,
   },
 });

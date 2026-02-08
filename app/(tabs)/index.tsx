@@ -98,6 +98,8 @@ export default function HomeScreen() {
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const [dailyChallengeCompleted, setDailyChallengeCompleted] = useState(false);
+  const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
 
   const loadEvents = async () => {
     try {
@@ -129,14 +131,32 @@ export default function HomeScreen() {
       if (profile && profile.unread_notifications_count !== undefined) {
         setUnreadNotifications(profile.unread_notifications_count);
       }
+      if (profile && profile.avatar_url) {
+        setUserAvatarUrl(profile.avatar_url);
+      }
     } catch (error) {
       console.log("Error fetching profile for notifications:", error);
+    }
+  };
+
+  const checkDailyChallengeStatus = async () => {
+    try {
+      const { ChallengesService } = require('@/services/challengesService');
+      const challenge = await ChallengesService.getToday();
+      if (challenge && challenge.estado === 'completado') {
+        setDailyChallengeCompleted(true);
+      } else {
+        setDailyChallengeCompleted(false);
+      }
+    } catch (error) {
+      console.log("Error checking daily challenge status:", error);
     }
   };
 
   useEffect(() => {
     loadEvents();
     loadUserProfile();
+    checkDailyChallengeStatus();
   }, [activeFilter]);
 
   const navigateToSearch = () => router.push('/search');
@@ -162,6 +182,7 @@ export default function HomeScreen() {
       {/* Header */}
       <ActiveHeader
         unreadNotifications={unreadNotifications}
+        userAvatarUrl={userAvatarUrl}
         onAccountPress={() => setShowAccountMenu(true)}
       />
 
@@ -179,20 +200,22 @@ export default function HomeScreen() {
         {/* Bento Grid - Quick Actions */}
         <View style={styles.bentoGrid}>
           <Pressable
-            style={styles.dailyChallengeCard}
+            style={[styles.dailyChallengeCard, dailyChallengeCompleted && styles.dailyChallengeCardCompleted]}
             onPress={() => router.push('/challenges')}
           >
             <View style={styles.challengeInfo}>
-              <View style={styles.challengeIconBg}>
-                <Ionicons name="trophy" size={24} color="#F59E0B" />
+              <View style={[styles.challengeIconBg, dailyChallengeCompleted && styles.challengeIconBgCompleted]}>
+                <Ionicons name={dailyChallengeCompleted ? "checkmark-circle" : "trophy"} size={24} color={dailyChallengeCompleted ? "#10B981" : "#F59E0B"} />
               </View>
               <View>
-                <Text style={styles.cardTitle}>Desafío Diario</Text>
-                <Text style={styles.cardSubtitle}>Gana +50 XP hoy</Text>
+                <Text style={styles.cardTitle}>{dailyChallengeCompleted ? "Desafío Completado" : "Desafío Diario"}</Text>
+                <Text style={[styles.cardSubtitle, dailyChallengeCompleted && styles.cardSubtitleCompleted]}>
+                  {dailyChallengeCompleted ? "¡Bien hecho! Vuelve mañana" : "Gana +50 XP hoy"}
+                </Text>
               </View>
             </View>
-            <View style={styles.arrowBg}>
-              <Ionicons name="arrow-forward" size={20} color={GLASS.textPrimary} />
+            <View style={[styles.arrowBg, dailyChallengeCompleted && styles.arrowBgCompleted]}>
+              <Ionicons name={dailyChallengeCompleted ? "checkmark" : "arrow-forward"} size={20} color={GLASS.textPrimary} />
             </View>
           </Pressable>
         </View>
@@ -411,6 +434,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(245, 158, 11, 0.3)', // Gold/Amber hint
   },
+  dailyChallengeCardCompleted: {
+    borderColor: 'rgba(16, 185, 129, 0.5)', // Green hint
+    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+  },
   challengeInfo: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -424,6 +451,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  challengeIconBgCompleted: {
+    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+  },
   cardTitle: {
     color: GLASS.textPrimary,
     fontWeight: 'bold',
@@ -434,6 +464,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
+  cardSubtitleCompleted: {
+    color: '#10B981', // Green
+  },
   arrowBg: {
     width: 40,
     height: 40,
@@ -441,6 +474,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  arrowBgCompleted: {
+    backgroundColor: 'rgba(16, 185, 129, 0.3)',
   },
   // FILTERS
   filtersContainer: {

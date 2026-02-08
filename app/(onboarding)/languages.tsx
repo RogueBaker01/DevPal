@@ -1,32 +1,51 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, TextInput, StyleSheet, Image } from 'react-native';
+import {
+  View,
+  Text,
+  Pressable,
+  TextInput,
+  StyleSheet,
+  Image,
+  ScrollView,
+  Dimensions,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
+import { useAuth } from '@/contexts/AuthContext';
 
-// Design tokens
-const COLORS = {
-  darkBg: '#0F172A',
-  primaryBlue: '#2563EB',
-  accentCyan: '#22D3EE',
-  white: '#FFFFFF',
-  textMuted: '#64748B',
+const { width } = Dimensions.get('window');
+
+// Glass UI tokens (matching interests.tsx)
+const GLASS = {
+  bg: 'rgba(30, 41, 59, 0.7)',
+  bgDark: '#0F172A',
+  border: 'rgba(255, 255, 255, 0.1)',
+  textPrimary: '#F8FAFC',
+  textSecondary: '#94A3B8',
+  accent: '#22D3EE',
+  accentGradient: '#3B82F6',
+  inputBg: 'rgba(15, 23, 42, 0.6)',
+  cardBg: 'rgba(30, 41, 59, 0.6)',
 };
 
-// Programming languages based on Figma
+// Programming languages with colors
 const LANGUAGES = [
-  { id: 'javascript', title: 'JavaScript', logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/javascript/javascript-original.svg', bgColor: '#F7DF1E' },
-  { id: 'python', title: 'Python', logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/python/python-original.svg', bgColor: '#3776AB' },
-  { id: 'java', title: 'Java', logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/java/java-original.svg', bgColor: '#ED8B00' },
-  { id: 'cpp', title: 'C / C++', logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/cplusplus/cplusplus-original.svg', bgColor: '#00599C' },
+  { id: 'javascript', title: 'JavaScript', bgColor: '#F7DF1E', textColor: '#000' },
+  { id: 'python', title: 'Python', bgColor: '#3776AB', textColor: '#FFF' },
+  { id: 'java', title: 'Java', bgColor: '#ED8B00', textColor: '#FFF' },
+  { id: 'cpp', title: 'C / C++', bgColor: '#00599C', textColor: '#FFF' },
+  { id: 'typescript', title: 'TypeScript', bgColor: '#3178C6', textColor: '#FFF' },
+  { id: 'csharp', title: 'C#', bgColor: '#512BD4', textColor: '#FFF' },
 ];
 
 /**
- * Languages Selection Screen (Filtro - lenguajes)
- * Based on Figma: Logo cards in 2x2 grid
+ * Languages Selection Screen - Glass UI Dark Theme
+ * Matching style with interests.tsx
  */
 export default function LanguagesScreen() {
   const router = useRouter();
+  const { completeOnboarding } = useAuth();
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
   const [customLanguage, setCustomLanguage] = useState('');
 
@@ -38,187 +57,234 @@ export default function LanguagesScreen() {
     );
   };
 
-  const handleComplete = () => {
-    router.replace('/(tabs)');
+  const handleComplete = async () => {
+    await completeOnboarding();
+  };
+
+  const handleBack = () => {
+    router.back();
+  };
+
+  const getLangSymbol = (id: string) => {
+    switch (id) {
+      case 'javascript': return 'JS';
+      case 'python': return 'Py';
+      case 'java': return 'Jv';
+      case 'cpp': return 'C++';
+      case 'typescript': return 'TS';
+      case 'csharp': return 'C#';
+      default: return '?';
+    }
   };
 
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
       
-      {/* Blue header */}
-      <View style={styles.header}>
-        {/* Search bar row */}
-        <View style={styles.searchRow}>
+      {/* Background decorations */}
+      <View style={styles.bgCircle1} />
+      <View style={styles.bgCircle2} />
+      <View style={styles.bgCircle3} />
+      
+      <ScrollView 
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {/* Header Section */}
+        <View style={styles.headerSection}>
           <Image
             source={require('@/assets/images/devpal-mascot.png')}
-            style={styles.mascotIcon}
+            style={styles.mascot}
             resizeMode="contain"
           />
           
-          <View style={styles.searchContainer}>
-            <Text style={styles.searchText}>Buscar</Text>
-            <Ionicons name="search" size={18} color={COLORS.textMuted} />
+          {/* Progress indicator */}
+          <View style={styles.progressContainer}>
+            <View style={[styles.progressDot, styles.progressDotInactive]} />
+            <View style={styles.progressDot} />
           </View>
           
-          <Pressable style={styles.iconButton}>
-            <Ionicons name="person-circle" size={28} color="white" />
-          </Pressable>
-          <Pressable style={styles.iconButton}>
-            <Ionicons name="notifications" size={24} color="white" />
-          </Pressable>
-        </View>
-        
-        <Text style={styles.headerTitle}>
-          ¿Cuáles son tus lenguajes de interés?
-        </Text>
-      </View>
-      
-      {/* Cards section */}
-      <View style={styles.cardsSection}>
-        {/* Grid of logo cards */}
-        <View style={styles.grid}>
-          {LANGUAGES.map((lang) => {
-            const isSelected = selectedLanguages.includes(lang.id);
-            return (
-              <Pressable
-                key={lang.id}
-                onPress={() => toggleLanguage(lang.id)}
-                style={[
-                  styles.card,
-                  { backgroundColor: COLORS.white },
-                  isSelected && styles.cardSelected
-                ]}
-              >
-                {/* Language logo */}
-                <View style={styles.logoContainer}>
-                  {lang.id === 'javascript' && (
-                    <View style={[styles.jsLogo, { backgroundColor: '#F7DF1E' }]}>
-                      <Text style={styles.jsText}>JS</Text>
-                    </View>
-                  )}
-                  {lang.id === 'python' && (
-                    <Image
-                      source={{ uri: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Python-logo-notext.svg/1200px-Python-logo-notext.svg.png' }}
-                      style={styles.langLogo}
-                      resizeMode="contain"
-                    />
-                  )}
-                  {lang.id === 'java' && (
-                    <Image
-                      source={{ uri: 'https://www.vectorlogo.zone/logos/java/java-icon.svg' }}
-                      style={styles.langLogo}
-                      resizeMode="contain"
-                    />
-                  )}
-                  {lang.id === 'cpp' && (
-                    <View style={styles.cppLogo}>
-                      <Text style={styles.cppText}>C++</Text>
-                    </View>
-                  )}
-                </View>
-                
-                <Text style={styles.cardTitle}>{lang.title}</Text>
-                
-                {isSelected && (
-                  <View style={styles.checkmark}>
-                    <Ionicons name="checkmark" size={14} color="white" />
-                  </View>
-                )}
-              </Pressable>
-            );
-          })}
-        </View>
-        
-        {/* Custom input */}
-        <View style={styles.customInputContainer}>
-          <TextInput
-            placeholder="Otra(escribe aquí tus intereses)"
-            placeholderTextColor={COLORS.textMuted}
-            value={customLanguage}
-            onChangeText={setCustomLanguage}
-            style={styles.customInput}
-          />
-        </View>
-        
-        {/* Next button */}
-        <Pressable 
-          onPress={handleComplete}
-          style={styles.nextButton}
-        >
-          <Text style={styles.nextButtonText}>
-            Selecciona todas los de tu interés
+          <Text style={styles.stepText}>Paso 2 de 2</Text>
+          <Text style={styles.title}>¿Cuáles son tus lenguajes de interés?</Text>
+          <Text style={styles.subtitle}>
+            Selecciona los lenguajes de programación que te interesan
           </Text>
-        </Pressable>
+        </View>
         
-        {/* Event preview */}
-        <View style={styles.eventPreview}>
-          <View style={styles.eventPreviewContent}>
-            <View style={styles.eventIconContainer}>
-              <Image
-                source={require('@/assets/images/devpal-mascot.png')}
-                style={styles.eventIcon}
-                resizeMode="contain"
-              />
-            </View>
-            <Text style={styles.eventPreviewTitle}>Hackathon BLOQUE</Text>
+        {/* Glass Card Container */}
+        <View style={styles.glassCard}>
+          {/* Grid of language cards */}
+          <View style={styles.grid}>
+            {LANGUAGES.map((lang) => {
+              const isSelected = selectedLanguages.includes(lang.id);
+              return (
+                <Pressable
+                  key={lang.id}
+                  onPress={() => toggleLanguage(lang.id)}
+                  style={[
+                    styles.langCard,
+                    isSelected && styles.langCardSelected,
+                  ]}
+                >
+                  {/* Language symbol */}
+                  <View style={[styles.langIcon, { backgroundColor: lang.bgColor }]}>
+                    <Text style={[styles.langSymbol, { color: lang.textColor }]}>
+                      {getLangSymbol(lang.id)}
+                    </Text>
+                  </View>
+                  
+                  <Text style={styles.cardTitle}>{lang.title}</Text>
+                  
+                  {/* Selection indicator */}
+                  {isSelected && (
+                    <View style={styles.checkmark}>
+                      <Ionicons name="checkmark" size={14} color={GLASS.bgDark} />
+                    </View>
+                  )}
+                </Pressable>
+              );
+            })}
           </View>
-          <Pressable style={styles.moreInfoButton}>
-            <Text style={styles.moreInfoText}>Más información</Text>
-            <Ionicons name="chevron-down" size={14} color={COLORS.textMuted} />
+          
+          {/* Custom input */}
+          <View style={styles.customInputContainer}>
+            <TextInput
+              placeholder="Otro lenguaje (escribe aquí)"
+              placeholderTextColor={GLASS.textSecondary}
+              value={customLanguage}
+              onChangeText={setCustomLanguage}
+              style={styles.customInput}
+            />
+          </View>
+          
+          {/* Selection count */}
+          <View style={styles.selectionInfo}>
+            <Ionicons name="information-circle-outline" size={18} color={GLASS.textSecondary} />
+            <Text style={styles.selectionText}>
+              {selectedLanguages.length === 0 && !customLanguage
+                ? 'Selecciona al menos una opción'
+                : `${selectedLanguages.length + (customLanguage ? 1 : 0)} ${(selectedLanguages.length + (customLanguage ? 1 : 0)) === 1 ? 'seleccionado' : 'seleccionados'}`
+              }
+            </Text>
+          </View>
+        </View>
+        
+        {/* Action Buttons */}
+        <View style={styles.buttonsContainer}>
+          <Pressable 
+            onPress={handleComplete}
+            style={[
+              styles.nextButton,
+              selectedLanguages.length === 0 && !customLanguage && styles.buttonDisabled,
+            ]}
+            disabled={selectedLanguages.length === 0 && !customLanguage}
+          >
+            <Text style={styles.nextButtonText}>Completar</Text>
+            <Ionicons name="checkmark-circle" size={20} color={GLASS.bgDark} />
+          </Pressable>
+          
+          <Pressable onPress={handleBack} style={styles.skipButton}>
+            <Ionicons name="arrow-back" size={18} color={GLASS.textSecondary} />
+            <Text style={styles.skipButtonText}>Volver atrás</Text>
           </Pressable>
         </View>
-      </View>
+      </ScrollView>
     </View>
   );
 }
 
+const CARD_WIDTH = (width - 72) / 2;
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.primaryBlue,
+    backgroundColor: GLASS.bgDark,
   },
-  header: {
-    paddingTop: 48,
-    paddingHorizontal: 16,
-    paddingBottom: 16,
+  bgCircle1: {
+    position: 'absolute',
+    width: 300,
+    height: 300,
+    borderRadius: 150,
+    backgroundColor: 'rgba(34, 211, 238, 0.08)',
+    top: -100,
+    right: -100,
   },
-  searchRow: {
-    flexDirection: 'row',
+  bgCircle2: {
+    position: 'absolute',
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: 'rgba(59, 130, 246, 0.08)',
+    top: 400,
+    left: -80,
+  },
+  bgCircle3: {
+    position: 'absolute',
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    backgroundColor: 'rgba(34, 211, 238, 0.05)',
+    bottom: 100,
+    right: -50,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: 24,
+    paddingTop: 60,
+    paddingBottom: 40,
+  },
+  headerSection: {
     alignItems: 'center',
-    gap: 8,
+    marginBottom: 24,
+  },
+  mascot: {
+    width: 80,
+    height: 80,
     marginBottom: 16,
   },
-  mascotIcon: {
-    width: 36,
-    height: 36,
-  },
-  searchContainer: {
-    flex: 1,
-    backgroundColor: COLORS.white,
-    borderRadius: 20,
+  progressContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    gap: 8,
+    marginBottom: 12,
   },
-  searchText: {
-    color: COLORS.textMuted,
-    fontSize: 14,
+  progressDot: {
+    width: 32,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: GLASS.accent,
   },
-  iconButton: {
-    padding: 4,
+  progressDotInactive: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
-  headerTitle: {
-    color: COLORS.white,
-    fontSize: 18,
+  stepText: {
+    fontSize: 13,
+    color: GLASS.textSecondary,
+    marginBottom: 8,
+  },
+  title: {
+    fontSize: 24,
     fontWeight: '700',
+    color: GLASS.textPrimary,
     textAlign: 'center',
+    marginBottom: 8,
   },
-  cardsSection: {
-    flex: 1,
+  subtitle: {
+    fontSize: 14,
+    color: GLASS.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20,
     paddingHorizontal: 16,
+  },
+  glassCard: {
+    backgroundColor: GLASS.bg,
+    borderRadius: 24,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: GLASS.border,
   },
   grid: {
     flexDirection: 'row',
@@ -226,127 +292,106 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: 12,
   },
-  card: {
-    width: '48%',
+  langCard: {
+    width: CARD_WIDTH,
     height: 120,
-    borderRadius: 12,
+    borderRadius: 16,
+    backgroundColor: GLASS.cardBg,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
     position: 'relative',
   },
-  cardSelected: {
-    borderWidth: 3,
-    borderColor: COLORS.accentCyan,
+  langCardSelected: {
+    borderColor: GLASS.accent,
   },
-  logoContainer: {
-    marginBottom: 8,
-  },
-  jsLogo: {
-    width: 50,
-    height: 50,
-    borderRadius: 8,
+  langIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: 10,
   },
-  jsText: {
-    color: '#000',
+  langSymbol: {
     fontSize: 20,
-    fontWeight: '900',
-  },
-  langLogo: {
-    width: 50,
-    height: 50,
-  },
-  cppLogo: {
-    width: 50,
-    height: 50,
-    borderRadius: 8,
-    backgroundColor: '#00599C',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cppText: {
-    color: '#FFF',
-    fontSize: 16,
-    fontWeight: '700',
+    fontWeight: '800',
   },
   cardTitle: {
-    color: COLORS.darkBg,
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '700',
+    color: GLASS.textPrimary,
   },
   checkmark: {
     position: 'absolute',
-    top: 8,
-    right: 8,
-    backgroundColor: COLORS.accentCyan,
-    borderRadius: 10,
-    padding: 3,
+    top: 10,
+    right: 10,
+    backgroundColor: GLASS.accent,
+    borderRadius: 12,
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   customInputContainer: {
     marginTop: 16,
   },
   customInput: {
-    backgroundColor: COLORS.white,
-    borderRadius: 24,
+    backgroundColor: GLASS.inputBg,
+    borderRadius: 16,
     paddingHorizontal: 20,
-    paddingVertical: 12,
+    paddingVertical: 14,
     fontSize: 14,
-    color: COLORS.darkBg,
+    color: GLASS.textPrimary,
+    borderWidth: 1,
+    borderColor: GLASS.border,
+  },
+  selectionInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: GLASS.border,
+  },
+  selectionText: {
+    fontSize: 14,
+    color: GLASS.textSecondary,
+  },
+  buttonsContainer: {
+    marginTop: 24,
+    gap: 12,
   },
   nextButton: {
-    backgroundColor: COLORS.white,
-    borderRadius: 24,
-    paddingVertical: 14,
+    backgroundColor: GLASS.accent,
+    height: 56,
+    borderRadius: 16,
     alignItems: 'center',
-    marginTop: 12,
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 8,
+  },
+  buttonDisabled: {
+    opacity: 0.5,
   },
   nextButtonText: {
-    color: COLORS.primaryBlue,
-    fontSize: 14,
-    fontWeight: '600',
+    color: GLASS.bgDark,
+    fontSize: 17,
+    fontWeight: '700',
   },
-  eventPreview: {
-    backgroundColor: COLORS.primaryBlue,
-    borderRadius: 12,
-    padding: 12,
-    marginTop: 16,
-    flexDirection: 'row',
+  skipButton: {
+    height: 48,
     alignItems: 'center',
-    justifyContent: 'space-between',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
-  },
-  eventPreviewContent: {
+    justifyContent: 'center',
     flexDirection: 'row',
-    alignItems: 'center',
+    gap: 6,
   },
-  eventIconContainer: {
-    backgroundColor: COLORS.white,
-    borderRadius: 16,
-    padding: 4,
-    marginRight: 10,
-  },
-  eventIcon: {
-    width: 20,
-    height: 20,
-  },
-  eventPreviewTitle: {
-    color: COLORS.white,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  moreInfoButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.white,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 14,
-    gap: 4,
-  },
-  moreInfoText: {
-    color: COLORS.textMuted,
-    fontSize: 11,
+  skipButtonText: {
+    color: GLASS.textSecondary,
+    fontSize: 15,
+    fontWeight: '500',
   },
 });

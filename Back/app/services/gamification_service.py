@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import desc, func
 from typing import List, Dict, Any, Optional
 from app.models.db_models import (
-    Usuario, PerfilUsuario, DesafioDiario, UsuarioEvento,
+    Usuario, PerfilUsuario, DesafioDiario, ProgresoDesafioDiario, UsuarioEvento,
     Badge, UsuarioBadge
 )
 
@@ -87,7 +87,6 @@ class GamificationService:
         Returns:
             Lista de usuarios con su ranking y XP
         """
-        # ✅ OPTIMIZACIÓN: Eager loading para evitar N+1 queries
         from sqlalchemy.orm import joinedload
         
         query = self.db.query(Usuario, PerfilUsuario)\
@@ -191,16 +190,19 @@ class GamificationService:
                 cumple = perfil.racha_dias >= criterio.get("dias", 0)
             
             elif criterio.get("tipo") == "desafios_completados":
-                desafios_completados = self.db.query(DesafioDiario).filter(
-                    DesafioDiario.usuario_id == usuario_id,
-                    DesafioDiario.estado == "completado"
+                desafios_completados = self.db.query(ProgresoDesafioDiario).filter(
+                    ProgresoDesafioDiario.usuario_id == usuario_id,
+                    ProgresoDesafioDiario.estado == "completado"
                 ).count()
                 cumple = desafios_completados >= criterio.get("cantidad", 0)
             
             elif criterio.get("tipo") == "desafios_dificiles":
-                desafios_dificiles = self.db.query(DesafioDiario).filter(
-                    DesafioDiario.usuario_id == usuario_id,
-                    DesafioDiario.estado == "completado",
+                desafios_dificiles = self.db.query(ProgresoDesafioDiario).join(
+                    DesafioDiario,
+                    ProgresoDesafioDiario.desafio_id == DesafioDiario.id
+                ).filter(
+                    ProgresoDesafioDiario.usuario_id == usuario_id,
+                    ProgresoDesafioDiario.estado == "completado",
                     DesafioDiario.dificultad == "Difícil"
                 ).count()
                 cumple = desafios_dificiles >= criterio.get("cantidad", 0)

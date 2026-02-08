@@ -36,6 +36,17 @@ export default function SearchScreen() {
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
+  // Filter events based on search query
+  const filteredEvents = events.filter((event) => {
+    if (!searchQuery.trim()) return true;
+    const query = searchQuery.toLowerCase().trim();
+    const titulo = (event.titulo || '').toLowerCase();
+    const descripcion = (event.descripcion || '').toLowerCase();
+    const categoria = (event.categoria || '').toLowerCase();
+    const ubicacion = (event.ubicacion || '').toLowerCase();
+    return titulo.includes(query) || descripcion.includes(query) || categoria.includes(query) || ubicacion.includes(query);
+  });
+
   // Load events from API
   useEffect(() => {
     loadEvents();
@@ -80,15 +91,16 @@ export default function SearchScreen() {
               value={searchQuery}
               onChangeText={(text) => {
                 setSearchQuery(text);
-                setShowDropdown(text.length > 0);
+                setShowDropdown(text.length === 0);
               }}
-              onFocus={() => setShowDropdown(true)}
+              onFocus={() => setShowDropdown(searchQuery.length === 0)}
+              onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
               style={styles.searchInput}
             />
             {searchQuery.length > 0 && (
               <Pressable onPress={() => {
                 setSearchQuery('');
-                setShowDropdown(false);
+                setShowDropdown(true);
               }}>
                 <Ionicons name="close-circle" size={18} color={GLASS.textSecondary} />
               </Pressable>
@@ -186,14 +198,14 @@ export default function SearchScreen() {
             <ActivityIndicator size="large" color={GLASS.accent} />
             <Text style={{ marginTop: 12, color: GLASS.textSecondary }}>Cargando eventos...</Text>
           </View>
-        ) : events.length === 0 ? (
+        ) : filteredEvents.length === 0 ? (
           <View style={{ padding: 40, alignItems: 'center' }}>
             <Text style={{ color: GLASS.textSecondary, fontSize: 16 }}>
-              No hay eventos disponibles
+              {searchQuery.trim() ? 'No se encontraron resultados' : 'No hay eventos disponibles'}
             </Text>
           </View>
         ) : (
-          events.map((event: any) => (
+          filteredEvents.map((event: any) => (
             <BlurView key={event.id} intensity={20} tint="dark" style={styles.eventCard}>
               <Pressable
                 style={styles.eventCardHeader}

@@ -150,10 +150,11 @@ class Notificacion(Base):
 
 
 class DesafioDiario(Base):
+    """Desafío global del día - el mismo para todos los usuarios"""
     __tablename__ = "desafios_diarios"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    usuario_id = Column(UUID(as_uuid=True), ForeignKey("usuarios.id", ondelete="CASCADE"), nullable=False)
+    fecha = Column(Date, nullable=False, unique=True)  # Un desafío por día, global para todos
     titulo = Column(String(255), nullable=False)
     lenguaje_recomendado = Column(String(50), nullable=False)
     contexto_negocio = Column(Text, nullable=True)
@@ -162,19 +163,39 @@ class DesafioDiario(Base):
     restricciones_json = Column(JSONB, nullable=True)
     casos_prueba_json = Column(JSONB, nullable=True)
     pista = Column(Text, nullable=True)
-    estado = Column(String(50), default='pendiente', nullable=False)
     dificultad = Column(String(50), default='Medio', nullable=False)
     xp_recompensa = Column(Integer, default=50, nullable=False)
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
-    completado_at = Column(TIMESTAMP(timezone=True), nullable=True)
     
     __table_args__ = (
-        CheckConstraint("estado IN ('pendiente', 'en_progreso', 'completado', 'abandonado')", name='check_estado_desafio_valido'),
         CheckConstraint("dificultad IN ('Fácil', 'Medio', 'Difícil')", name='check_dificultad_valida'),
         CheckConstraint('xp_recompensa >= 0', name='check_xp_positivo'),
     )
     
-    usuario = relationship(lambda: Usuario, back_populates="desafios")
+    progresos = relationship(lambda: ProgresoDesafioDiario, back_populates="desafio", cascade="all, delete-orphan")
+
+
+class ProgresoDesafioDiario(Base):
+    """Progreso de cada usuario en el desafío diario"""
+    __tablename__ = "progreso_desafio_diario"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    usuario_id = Column(UUID(as_uuid=True), ForeignKey("usuarios.id", ondelete="CASCADE"), nullable=False)
+    desafio_id = Column(UUID(as_uuid=True), ForeignKey("desafios_diarios.id", ondelete="CASCADE"), nullable=False)
+    estado = Column(String(50), default='pendiente', nullable=False)
+    completado_at = Column(TIMESTAMP(timezone=True), nullable=True)
+    codigo_enviado = Column(Text, nullable=True)  # Guardar el código que envió el usuario
+    lenguaje_usado = Column(String(50), nullable=True)  # Lenguaje que usó
+    created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
+    updated_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now())
+    
+    __table_args__ = (
+        UniqueConstraint('usuario_id', 'desafio_id', name='unique_usuario_desafio'),
+        CheckConstraint("estado IN ('pendiente', 'en_progreso', 'completado', 'abandonado')", name='check_estado_progreso_valido'),
+    )
+    
+    usuario = relationship(lambda: Usuario, back_populates="progresos_desafios")
+    desafio = relationship(lambda: DesafioDiario, back_populates="progresos")
 
 
 class Noticia(Base):
@@ -319,7 +340,7 @@ class Usuario(Base):
     eventos_guardados = relationship(lambda: EventoGuardado, back_populates="usuario", cascade="all, delete-orphan")
     usuario_eventos = relationship(lambda: UsuarioEvento, back_populates="usuario", cascade="all, delete-orphan")
     notificaciones = relationship(lambda: Notificacion, back_populates="usuario", cascade="all, delete-orphan")
-    desafios = relationship(lambda: DesafioDiario, back_populates="usuario", cascade="all, delete-orphan")
+    progresos_desafios = relationship(lambda: ProgresoDesafioDiario, back_populates="usuario", cascade="all, delete-orphan")
     noticias = relationship(lambda: Noticia, back_populates="usuario", cascade="all, delete-orphan")
     revisiones = relationship(lambda: RevisionCodigo, back_populates="usuario", cascade="all, delete-orphan")
     mensajes = relationship(lambda: MensajeChat, back_populates="usuario", cascade="all, delete-orphan")

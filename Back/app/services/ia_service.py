@@ -142,28 +142,44 @@ class IAService:
             self.db.rollback()
             return 0, 0
     
-    def generar_y_guardar_desafio(
-        self,
-        usuario_id: str,
-        user_info: dict,
-    ) -> dict | None:
+    async def generar_desafio_global(self) -> dict | None:
         """
-        Genera un desafío diario personalizado y lo guarda en la base de datos.
+        Genera un desafío diario GLOBAL (el mismo para todos los usuarios).
+        Si ya existe uno para hoy, lo retorna.
         """
         from app.models.db_models import DesafioDiario
+        from datetime import datetime
+        
+        hoy = datetime.now().date()
+        
+        # Verificar si ya existe un desafío para hoy
+        desafio_existente = self.db.query(DesafioDiario).filter(
+            DesafioDiario.fecha == hoy
+        ).first()
+        
+        if desafio_existente:
+            return desafio_existente
         
         if not self.client:
             logger.warning("GenAI client not initialized. Skipping challenge generation.")
             return None
 
         try:
-            # 1. Obtener historial de desafíos para evitar repetición
-            desafios_previos = self.db.query(DesafioDiario.titulo).filter(
-                DesafioDiario.usuario_id == usuario_id
-            ).limit(20).all()
+            # 1. Obtener historial de desafíos previos para evitar repetición
+            desafios_previos = self.db.query(DesafioDiario.titulo).order_by(
+                DesafioDiario.fecha.desc()
+            ).limit(30).all()
             historia_titulos = [d[0] for d in desafios_previos]
             
-            # 2. Generar desafío con IA
+            # 2. User info genérico para desafío global
+            user_info = {
+                "nombre": "Developer",
+                "nivel": 2,  # Nivel medio para todos
+                "intereses": ["Algoritmos", "Estructuras de datos", "Programación"],
+                "lenguajes": ["Python", "JavaScript", "Java"]
+            }
+            
+            # 3. Generar desafío con IA
             desafio_raw, timestamp = generar_desafio_diario(
                 self.client, 
                 user_info, 
@@ -173,9 +189,9 @@ class IAService:
             if not desafio_raw:
                 return None
             
-            # 3. Guardar en base de datos
+            # 4. Guardar en base de datos como desafío global
             desafio = DesafioDiario(
-                usuario_id=usuario_id,
+                fecha=hoy,
                 titulo=desafio_raw['titulo'],
                 lenguaje_recomendado=desafio_raw.get('lenguaje_recomendado', 'python'),
                 contexto_negocio=desafio_raw.get('contexto_negocio', ''),
@@ -186,18 +202,41 @@ class IAService:
                 pista=desafio_raw.get('pista', ''),
                 dificultad=desafio_raw.get('dificultad', 'Medio'),
                 xp_recompensa=desafio_raw.get('xp_recompensa', 50),
-                estado='pendiente'
             )
             self.db.add(desafio)
             self.db.commit()
             self.db.refresh(desafio)
             
+            logger.info(f"Desafío global generado para {hoy}: {desafio.titulo}")
             return desafio
 
         except Exception as e:
-            logger.error(f"Error generando desafío (posible quota limit): {e}")
+            logger.error(f"Error generando desafío global (posible quota limit): {e}")
             self.db.rollback()
             return None
+    
+    def generar_y_guardar_desafio(
+        self,
+        usuario_id: str,
+        user_info: dict,
+    ) -> dict | None:
+        """
+        DEPRECATED: Usa generar_desafio_global() en su lugar.
+        Mantiene compatibilidad con código antiguo.
+        """
+        import asyncio
+        logger.warning("generar_y_guardar_desafio está deprecated, usa generar_desafio_global")
+        
+        # Ejecutar la versión async de forma sincrónica
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            # Si ya hay un loop corriendo, crear uno nuevo
+            import concurrent.futures
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                future = executor.submit(asyncio.run, self.generar_desafio_global())
+                return future.result()
+        else:
+            return asyncio.run(self.generar_desafio_global())
     
     async def realizar_code_review(
         self,

@@ -23,12 +23,26 @@ export default function SavedScreen() {
   const [showAccountMenu, setShowAccountMenu] = useState(false);
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
 
   useFocusEffect(
     React.useCallback(() => {
       loadSavedEvents();
+      loadUserProfile();
     }, [])
   );
+
+  const loadUserProfile = async () => {
+    try {
+      const { AuthService } = require('@/services/authService');
+      const profile = await AuthService.getProfile();
+      if (profile && profile.avatar_url) {
+        setUserAvatarUrl(profile.avatar_url);
+      }
+    } catch (error) {
+      console.log("Error fetching profile:", error);
+    }
+  };
 
   const loadSavedEvents = async () => {
     try {
@@ -64,6 +78,7 @@ export default function SavedScreen() {
 
       {/* Floating Glass Header */}
       <ActiveHeader
+        userAvatarUrl={userAvatarUrl}
         onAccountPress={() => setShowAccountMenu(true)}
       />
 

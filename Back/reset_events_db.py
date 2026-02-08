@@ -15,9 +15,7 @@ def reset_events():
         db.commit()
         print("Events and relations cleared successfully.")
         
-        # Reset ID sequence if using Postgres (optional but good)
         try:
-            # Check if using postgres via dialect
             if engine.dialect.name == 'postgresql':
                 db.execute(text("ALTER SEQUENCE eventos_id_seq RESTART WITH 1;"))
         except Exception as e:

@@ -225,6 +225,39 @@ export default function ChallengesScreen() {
         );
     }
 
+    // Show completed banner if challenge is already done
+    if (challenge.estado === "completado") {
+        return (
+            <View style={styles.container}>
+                <StatusBar style="light" />
+                <View style={styles.bgGradient} />
+                <View style={styles.bgCircle1} />
+                <View style={styles.bgCircle2} />
+                <BlurView intensity={30} tint="dark" style={styles.header}>
+                    <Pressable onPress={() => router.back()} style={styles.backButton}>
+                        <Ionicons name="arrow-back" size={24} color={GLASS.textPrimary} />
+                    </Pressable>
+                    <Text style={styles.headerTitle}>Desafío Diario</Text>
+                    <View style={{ width: 40 }} />
+                </BlurView>
+                <View style={styles.centerContainer}>
+                    <View style={styles.completedBanner}>
+                        <Ionicons name="checkmark-circle" size={80} color={GLASS.success} />
+                        <Text style={styles.completedTitle}>¡Desafío Completado!</Text>
+                        <Text style={styles.completedSubtitle}>Ya resolviste el desafío de hoy.{"\n"}Vuelve mañana para un nuevo reto.</Text>
+                        <Pressable
+                            style={styles.goHomeButton}
+                            onPress={() => router.replace('/(tabs)')}
+                        >
+                            <Ionicons name="home" size={20} color="#FFF" />
+                            <Text style={styles.goHomeButtonText}>Ir al Inicio</Text>
+                        </Pressable>
+                    </View>
+                </View>
+            </View>
+        );
+    }
+
     // Problem Tab Content
     const problemTab = (
         <ScrollView
@@ -476,6 +509,40 @@ const styles = StyleSheet.create({
     },
     loadingText: { color: GLASS.textSecondary },
     errorText: { color: GLASS.textSecondary, marginTop: 16 },
+
+    // Completed banner styles
+    completedBanner: {
+        alignItems: 'center',
+        padding: 32,
+        gap: 16,
+    },
+    completedTitle: {
+        fontSize: 28,
+        fontWeight: 'bold',
+        color: GLASS.success,
+        textAlign: 'center',
+    },
+    completedSubtitle: {
+        fontSize: 16,
+        color: GLASS.textSecondary,
+        textAlign: 'center',
+        lineHeight: 24,
+    },
+    goHomeButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        backgroundColor: GLASS.success,
+        paddingHorizontal: 24,
+        paddingVertical: 14,
+        borderRadius: 16,
+        marginTop: 16,
+    },
+    goHomeButtonText: {
+        color: '#FFF',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
 
     tabContent: { flex: 1 },
     tabContentInner: { padding: 16, paddingBottom: 100 },
