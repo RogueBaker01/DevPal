@@ -32,6 +32,63 @@ const GLASS = {
 // Filter options
 const FILTERS = ["Hackathons", "Conferencias", "Talleres", "Todos"];
 
+// Fallback images by category (20+ options total)
+const FALLBACK_IMAGES: Record<string, string[]> = {
+  "Hackathon": [
+    "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=800&q=80",
+    "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=800&q=80",
+    "https://images.unsplash.com/photo-1531482615713-2afd69097998?w=800&q=80",
+    "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&q=80",
+    "https://images.unsplash.com/photo-1552664730-d307ca884978?w=800&q=80",
+    "https://images.unsplash.com/photo-1517245386647-45ac0c1e8f32?w=800&q=80",
+    "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&q=80",
+  ],
+  "Conferencia": [
+    "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&q=80",
+    "https://images.unsplash.com/photo-1559223606-3158cf9890ca?w=800&q=80",
+    "https://images.unsplash.com/photo-1505373877841-8d25f7d46678?w=800&q=80",
+    "https://images.unsplash.com/photo-1591115765373-5207764f72e7?w=800&q=80",
+    "https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=800&q=80",
+    "https://images.unsplash.com/photo-1587825140708-dfaf72ae4b04?w=800&q=80",
+    "https://images.unsplash.com/photo-1560439514-4e9645039924?w=800&q=80",
+  ],
+  "Taller": [
+    "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=800&q=80",
+    "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=800&q=80",
+    "https://images.unsplash.com/photo-1531545514256-b1400bc00f31?w=800&q=80",
+    "https://images.unsplash.com/photo-1558008258-3256797b1e1e?w=800&q=80",
+    "https://images.unsplash.com/photo-1552581234-26160f608093?w=800&q=80",
+    "https://images.unsplash.com/photo-1515378960530-7c0da6231fb1?w=800&q=80",
+  ],
+  "Default": [
+    "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=800&q=80",
+    "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&q=80",
+    "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&q=80",
+    "https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&q=80",
+    "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800&q=80",
+    "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=800&q=80",
+    "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=800&q=80",
+  ],
+};
+
+const getRandomFallback = (category?: string): string => {
+  const images = FALLBACK_IMAGES[category || ""] || FALLBACK_IMAGES["Default"];
+  return images[Math.floor(Math.random() * images.length)];
+};
+
+const EventImage = ({ uri, style, category }: { uri: string | undefined; style: any; category?: string }) => {
+  const [hasError, setHasError] = useState(false);
+  const [fallbackUri] = useState(() => getRandomFallback(category));
+  
+  return (
+    <Image
+      source={{ uri: hasError ? fallbackUri : (uri || fallbackUri) }}
+      style={style}
+      onError={() => setHasError(true)}
+    />
+  );
+};
+
 export default function HomeScreen() {
   const router = useRouter();
   const [activeFilter, setActiveFilter] = useState("Hackathons");
@@ -195,16 +252,10 @@ export default function HomeScreen() {
                 style={styles.eventCard}
                 onPress={() => router.push(`/event/${event.id}`)}
               >
-                <Image
-                  source={{ uri: event.imagen_url || "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800" }}
+                <EventImage
+                  uri={event.imagen_url}
                   style={styles.eventImage}
-                  onError={(e) => {
-                    // Fallback using state or direct manipulation is hard in map
-                    // simpler approach: event.imagen_url is assumed valid by backend now
-                    // but we can try to force a default if it fails (requires component state)
-                    // For now, let's rely on backend fix + default source
-                  }}
-                  defaultSource={{ uri: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=800&q=80" }}
+                  category={event.categoria}
                 />
                 <View style={styles.eventContent}>
                   <View style={styles.eventHeader}>

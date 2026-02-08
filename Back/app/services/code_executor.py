@@ -60,7 +60,14 @@ def ejecutar_codigo_python(codigo: str, casos_prueba: List[Dict[str, Any]]) -> D
         
         if not funcion_principal:
             resultados["exito"] = False
-            resultados["error_compilacion"] = "No se encontró una función en el código"
+            resultados["error_compilacion"] = (
+                "Tu código debe contener una función.\n\n"
+                "Ejemplo:\n"
+                "def solucion(parametro):\n"
+                "    # tu lógica aquí\n"
+                "    return resultado\n\n"
+                "La función será llamada con los casos de prueba."
+            )
             return resultados
         
         # Ejecutar cada caso de prueba

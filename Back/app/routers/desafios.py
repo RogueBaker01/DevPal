@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import Annotated
 from pydantic import BaseModel
+import json
 from app.database import get_db
 from app.services.ia_service import IAService, get_ia_service
 from app.services.code_executor import ejecutar_codigo
@@ -38,7 +39,43 @@ async def obtener_desafio_del_dia(
         }
         desafio = await ia_service.generar_y_guardar_desafio(usuario_id, user_info)
     
-    return desafio
+    # Serializar el desafío con nombres de campos amigables para el frontend
+    return serialize_desafio(desafio)
+
+
+def serialize_desafio(desafio) -> dict:
+    """Convierte un objeto DesafioDiario a diccionario con nombres amigables para el frontend."""
+    if desafio is None:
+        return None
+    
+    def parse_json_field(value, default):
+        """Parsea un campo que puede ser string JSON o ya un dict/list."""
+        if value is None:
+            return default
+        if isinstance(value, str):
+            try:
+                return json.loads(value)
+            except json.JSONDecodeError:
+                return default
+        return value
+    
+    return {
+        "id": str(desafio.id),
+        "usuario_id": str(desafio.usuario_id),
+        "titulo": desafio.titulo,
+        "lenguaje_recomendado": desafio.lenguaje_recomendado,
+        "contexto_negocio": desafio.contexto_negocio,
+        "definicion_problema": desafio.definicion_problema,
+        "templates_lenguajes": parse_json_field(desafio.templates_lenguajes_json, {}),
+        "restricciones": parse_json_field(desafio.restricciones_json, {}),
+        "casos_prueba": parse_json_field(desafio.casos_prueba_json, []),
+        "pista": desafio.pista,
+        "estado": desafio.estado,
+        "dificultad": desafio.dificultad,
+        "xp_recompensa": desafio.xp_recompensa,
+        "created_at": desafio.created_at.isoformat() if desafio.created_at else None,
+        "completado_at": desafio.completado_at.isoformat() if desafio.completado_at else None,
+    }
 
 
 @router.post("/generar")
@@ -71,7 +108,7 @@ async def generar_nuevo_desafio(
     
     return {
         "status": "success",
-        "desafio": desafio,
+        "desafio": serialize_desafio(desafio),
         "message": "Desafío generado exitosamente"
     }
 

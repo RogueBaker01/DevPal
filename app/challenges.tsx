@@ -23,6 +23,7 @@ import { CodeReviewService } from "@/services/codeReviewService";
 import { TabbedLayout } from "@/components/TabbedLayout";
 import { CodeEditor } from "@/components/CodeEditor";
 import { AIReviewBottomSheet } from "@/components/AIReviewBottomSheet";
+import { TestResultsBottomSheet } from "@/components/TestResultsBottomSheet";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { HapticManager } from "@/utils/HapticManager";
 import { COLORS, RADIUS, SPACING, TYPOGRAPHY, SHADOWS } from "@/constants/designTokens";
@@ -136,14 +137,6 @@ export default function ChallengesScreen() {
 
             setExecutionResults(data.resultados);
             setShowResults(true);
-
-            if (data.status === "success") {
-                Alert.alert("Todos los casos pasaron", `${data.resultados.casos_pasados}/${data.resultados.casos_totales} casos de prueba correctos`);
-            } else if (data.resultados.error_compilacion) {
-                Alert.alert("Error de compilación", data.resultados.error_compilacion.substring(0, 200));
-            } else {
-                Alert.alert("Algunos casos fallaron", `${data.resultados.casos_pasados}/${data.resultados.casos_totales} casos pasaron`);
-            }
         } catch (error) {
             console.error("Error executing code:", error);
             Alert.alert("Error", "No se pudo ejecutar el código.");
@@ -166,10 +159,19 @@ export default function ChallengesScreen() {
             if (data.status === "success" && data.review) {
                 setReview(data.review);
                 setShowAIReview(true);
+            } else if (data.review) {
+                // Handle fallback review (when AI is unavailable)
+                setReview(data.review);
+                setShowAIReview(true);
+            } else {
+                Alert.alert("Sin respuesta", "El servicio de IA no devolvió una revisión. Intenta de nuevo.");
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error reviewing code:", error);
-            Alert.alert("Error", "No se pudo realizar la revisión.");
+            const errorMessage = error?.response?.data?.detail || 
+                error?.message || 
+                "No se pudo conectar con el servicio de IA. Verifica tu conexión.";
+            Alert.alert("Error de Revisión", errorMessage);
         } finally {
             setReviewing(false);
         }
@@ -402,6 +404,12 @@ export default function ChallengesScreen() {
                 visible={showAIReview}
                 onClose={() => setShowAIReview(false)}
                 review={review}
+            />
+
+            <TestResultsBottomSheet
+                visible={showResults}
+                onClose={() => setShowResults(false)}
+                results={executionResults}
             />
         </KeyboardAvoidingView>
     );

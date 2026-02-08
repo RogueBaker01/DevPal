@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, TextInput, StyleSheet, Platform, ScrollView, Pressable } from 'react-native';
+import React, { useRef, useCallback, useMemo } from 'react';
+import { View, Text, TextInput, StyleSheet, Platform, ScrollView, Pressable, NativeSyntheticEvent, NativeScrollEvent } from 'react-native';
 import { COLORS, RADIUS, SPACING, TYPOGRAPHY } from '@/constants/designTokens';
 
 interface CodeEditorProps {
@@ -11,6 +11,83 @@ interface CodeEditorProps {
     availableLanguages?: string[];
 }
 
+// Syntax highlighting tokens
+const SYNTAX_COLORS = {
+    keyword: '#C678DD',      // purple - if, for, while, def, function, return, etc
+    string: '#98C379',       // green - "string", 'string'
+    number: '#D19A66',       // orange - 123, 45.6
+    comment: '#5C6370',      // gray - # comment, // comment
+    function: '#61AFEF',     // blue - function names
+    operator: '#56B6C2',     // cyan - =, +, -, *, etc
+    bracket: '#E5C07B',      // yellow - (), [], {}
+    default: '#ABB2BF',      // light gray - default text
+};
+
+const pythonKeywords = ['def', 'return', 'if', 'else', 'elif', 'for', 'while', 'in', 'not', 'and', 'or', 'True', 'False', 'None', 'import', 'from', 'class', 'try', 'except', 'finally', 'with', 'as', 'lambda', 'pass', 'break', 'continue', 'global', 'yield', 'raise', 'assert'];
+const jsKeywords = ['function', 'return', 'if', 'else', 'for', 'while', 'const', 'let', 'var', 'true', 'false', 'null', 'undefined', 'new', 'this', 'class', 'try', 'catch', 'finally', 'throw', 'async', 'await', 'import', 'export', 'from', 'default', 'switch', 'case', 'break', 'continue', 'typeof', 'instanceof'];
+
+interface Token {
+    text: string;
+    color: string;
+}
+
+function tokenizeLine(line: string, language: string): Token[] {
+    const keywords = language === 'python' ? pythonKeywords : jsKeywords;
+    const tokens: Token[] = [];
+    let remaining = line;
+    
+    // Comment check
+    const commentChar = language === 'python' ? '#' : '//';
+    const commentIndex = remaining.indexOf(commentChar);
+    
+    if (commentIndex !== -1 && !remaining.substring(0, commentIndex).includes('"') && !remaining.substring(0, commentIndex).includes("'")) {
+        // Process before comment
+        if (commentIndex > 0) {
+            tokens.push(...tokenizeSegment(remaining.substring(0, commentIndex), keywords));
+        }
+        // Add comment
+        tokens.push({ text: remaining.substring(commentIndex), color: SYNTAX_COLORS.comment });
+        return tokens;
+    }
+    
+    return tokenizeSegment(line, keywords);
+}
+
+function tokenizeSegment(segment: string, keywords: string[]): Token[] {
+    const tokens: Token[] = [];
+    
+    // Regex to split by strings, numbers, words, operators, etc
+    const regex = /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|\d+\.?\d*|\w+|[+\-*/%=<>!&|^~]+|[()[\]{}.,;:]|\s+)/g;
+    let match;
+    
+    while ((match = regex.exec(segment)) !== null) {
+        const text = match[0];
+        let color = SYNTAX_COLORS.default;
+        
+        if (text.startsWith('"') || text.startsWith("'")) {
+            color = SYNTAX_COLORS.string;
+        } else if (/^\d/.test(text)) {
+            color = SYNTAX_COLORS.number;
+        } else if (keywords.includes(text)) {
+            color = SYNTAX_COLORS.keyword;
+        } else if (/^[()[\]{}]$/.test(text)) {
+            color = SYNTAX_COLORS.bracket;
+        } else if (/^[+\-*/%=<>!&|^~]+$/.test(text)) {
+            color = SYNTAX_COLORS.operator;
+        } else if (/^\w+$/.test(text) && !keywords.includes(text)) {
+            // Could be a function call if followed by (
+            const nextChar = segment[regex.lastIndex];
+            if (nextChar === '(') {
+                color = SYNTAX_COLORS.function;
+            }
+        }
+        
+        tokens.push({ text, color });
+    }
+    
+    return tokens;
+}
+
 export function CodeEditor({
     code,
     onCodeChange,
@@ -20,39 +97,24 @@ export function CodeEditor({
     availableLanguages = ['python', 'javascript'],
 }: CodeEditorProps) {
     const lines = code.split('\n');
+    const lineNumbersRef = useRef<ScrollView>(null);
+    const highlightRef = useRef<ScrollView>(null);
+
+    // Memoize highlighted code
+    const highlightedLines = useMemo(() => {
+        return lines.map(line => tokenizeLine(line, language));
+    }, [code, language]);
+
+    const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+        const y = event.nativeEvent.contentOffset.y;
+        // Sync line numbers and highlight scroll
+        lineNumbersRef.current?.scrollTo({ y, animated: false });
+        highlightRef.current?.scrollTo({ y, animated: false });
+    }, []);
 
     return (
         <View style={styles.container}>
-            <View style={styles.editorContainer}>
-                {/* Line Numbers */}
-                <ScrollView
-                    style={styles.lineNumbers}
-                    showsVerticalScrollIndicator={false}
-                    scrollEnabled={false}
-                >
-                    {lines.map((_, index) => (
-                        <Text key={index} style={styles.lineNumber}>
-                            {index + 1}
-                        </Text>
-                    ))}
-                </ScrollView>
-
-                {/* Code Input */}
-                <TextInput
-                    style={styles.codeInput}
-                    multiline
-                    placeholder={placeholder}
-                    placeholderTextColor={COLORS.textTertiary}
-                    value={code}
-                    onChangeText={onCodeChange}
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    textAlignVertical="top"
-                    scrollEnabled={true}
-                />
-            </View>
-
-            {/* Language Badge - Interactivo */}
+            {/* Language Badge */}
             <Pressable
                 style={({ pressed }) => [
                     styles.languageBadge,
@@ -61,7 +123,6 @@ export function CodeEditor({
                 onPress={() => {
                     if (onLanguageChange && availableLanguages && availableLanguages.length > 1) {
                         const currentIndex = availableLanguages.indexOf(language);
-                        // Asegurar que encontramos el índice, si no default a 0
                         const safeIndex = currentIndex === -1 ? 0 : currentIndex;
                         const nextIndex = (safeIndex + 1) % availableLanguages.length;
                         onLanguageChange(availableLanguages[nextIndex]);
@@ -70,6 +131,73 @@ export function CodeEditor({
             >
                 <Text style={styles.languageText}>{language}</Text>
             </Pressable>
+
+            <View style={styles.editorContainer}>
+                {/* Line Numbers */}
+                <ScrollView
+                    ref={lineNumbersRef}
+                    style={styles.lineNumbers}
+                    showsVerticalScrollIndicator={false}
+                    scrollEnabled={false}
+                    contentContainerStyle={styles.lineNumbersContent}
+                >
+                    {lines.map((_, index) => (
+                        <Text key={index} style={styles.lineNumber}>
+                            {index + 1}
+                        </Text>
+                    ))}
+                </ScrollView>
+
+                {/* Code Area with overlay approach */}
+                <View style={styles.codeArea}>
+                    {/* Syntax highlighted code (behind) */}
+                    <ScrollView
+                        ref={highlightRef}
+                        style={styles.highlightLayer}
+                        scrollEnabled={false}
+                        showsVerticalScrollIndicator={false}
+                        contentContainerStyle={styles.codeContent}
+                        pointerEvents="none"
+                    >
+                        {highlightedLines.map((tokens, lineIndex) => (
+                            <View key={lineIndex} style={styles.codeLine}>
+                                {tokens.length > 0 ? tokens.map((token, tokenIndex) => (
+                                    <Text key={tokenIndex} style={[styles.codeText, { color: token.color }]}>
+                                        {token.text}
+                                    </Text>
+                                )) : <Text style={styles.codeText}>{' '}</Text>}
+                            </View>
+                        ))}
+                    </ScrollView>
+
+                    {/* Transparent TextInput (front) for editing */}
+                    <ScrollView
+                        style={styles.inputLayer}
+                        contentContainerStyle={styles.codeContent}
+                        showsVerticalScrollIndicator={true}
+                        keyboardShouldPersistTaps="handled"
+                        keyboardDismissMode="none"
+                        onScroll={handleScroll}
+                        scrollEventThrottle={16}
+                    >
+                        <TextInput
+                            style={[styles.codeInput, { minHeight: Math.max(300, lines.length * 24 + 100) }]}
+                            multiline
+                            value={code}
+                            onChangeText={onCodeChange}
+                            placeholder={placeholder}
+                            placeholderTextColor={COLORS.textTertiary}
+                            autoCapitalize="none"
+                            autoCorrect={false}
+                            textAlignVertical="top"
+                            scrollEnabled={false}
+                            spellCheck={false}
+                            selectionColor="#22D3EE"
+                            keyboardType="default"
+                        />
+                    </ScrollView>
+                </View>
+            </View>
         </View>
     );
 }
@@ -87,25 +215,56 @@ const styles = StyleSheet.create({
     },
     lineNumbers: {
         backgroundColor: COLORS.gray800,
+        width: 28,
+    },
+    lineNumbersContent: {
         paddingVertical: SPACING.md,
-        paddingHorizontal: SPACING.xs,
-        minWidth: 40,
     },
     lineNumber: {
         color: COLORS.textTertiary,
-        fontSize: TYPOGRAPHY.sizes.xs,
+        fontSize: 10,
         fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
         lineHeight: 24,
-        textAlign: 'right',
-        paddingRight: 8,
+        textAlign: 'center',
+    },
+    codeArea: {
+        flex: 1,
+        position: 'relative',
+    },
+    highlightLayer: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+    },
+    inputLayer: {
+        flex: 1,
+    },
+    codeContent: {
+        flexGrow: 1,
+        padding: SPACING.md,
+    },
+    codeLine: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        minHeight: 24,
+        lineHeight: 24,
+    },
+    codeText: {
+        fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+        fontSize: TYPOGRAPHY.sizes.base,
+        lineHeight: 24,
     },
     codeInput: {
         flex: 1,
-        color: COLORS.backgroundLight,
+        color: 'transparent',
         fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
         fontSize: TYPOGRAPHY.sizes.base,
-        padding: SPACING.md,
         lineHeight: 24,
+        textAlignVertical: 'top',
+        padding: 0,
+        margin: 0,
     },
     languageBadge: {
         position: 'absolute',
