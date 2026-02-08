@@ -215,14 +215,16 @@ const styles = StyleSheet.create({
     },
     lineNumbers: {
         backgroundColor: COLORS.gray800,
-        width: 28,
+        width: 18,
+        minWidth: 18,
+        maxWidth: 18,
     },
     lineNumbersContent: {
         paddingVertical: SPACING.md,
     },
     lineNumber: {
         color: COLORS.textTertiary,
-        fontSize: 10,
+        fontSize: 9,
         fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
         lineHeight: 24,
         textAlign: 'center',
