@@ -1,11 +1,10 @@
-import React, { useState } from 'react';
-import { View, Text, Image, Pressable, ScrollView, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, Image, Pressable, ScrollView, StyleSheet, ActivityIndicator, Linking, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
-import { mockEvents } from '@/constants/MockData';
+import { EventsService } from '@/services/eventsService';
 
-// Design tokens
 const COLORS = {
   darkBg: '#0F172A',
   primaryBlue: '#2563EB',
@@ -15,132 +14,250 @@ const COLORS = {
   textMuted: '#64748B',
 };
 
-/**
- * Event Details Screen (Información)
- * Based on Figma: Full event details with image, info, and action buttons
- */
+const FALLBACK_IMAGES: Record<string, string[]> = {
+  "Hackathon": [
+    "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=800&q=80",
+    "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=800&q=80",
+    "https://images.unsplash.com/photo-1531482615713-2afd69097998?w=800&q=80",
+    "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&q=80",
+    "https://images.unsplash.com/photo-1552664730-d307ca884978?w=800&q=80",
+    "https://images.unsplash.com/photo-1517245386647-45ac0c1e8f32?w=800&q=80",
+    "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&q=80",
+  ],
+  "Conferencia": [
+    "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&q=80",
+    "https://images.unsplash.com/photo-1559223606-3158cf9890ca?w=800&q=80",
+    "https://images.unsplash.com/photo-1505373877841-8d25f7d46678?w=800&q=80",
+    "https://images.unsplash.com/photo-1591115765373-5207764f72e7?w=800&q=80",
+    "https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=800&q=80",
+    "https://images.unsplash.com/photo-1587825140708-dfaf72ae4b04?w=800&q=80",
+    "https://images.unsplash.com/photo-1560439514-4e9645039924?w=800&q=80",
+  ],
+  "Taller": [
+    "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=800&q=80",
+    "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=800&q=80",
+    "https://images.unsplash.com/photo-1531545514256-b1400bc00f31?w=800&q=80",
+    "https://images.unsplash.com/photo-1558008258-3256797b1e1e?w=800&q=80",
+    "https://images.unsplash.com/photo-1552581234-26160f608093?w=800&q=80",
+    "https://images.unsplash.com/photo-1515378960530-7c0da6231fb1?w=800&q=80",
+  ],
+  "Default": [
+    "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=800&q=80",
+    "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&q=80",
+    "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&q=80",
+    "https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&q=80",
+    "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800&q=80",
+    "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=800&q=80",
+    "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=800&q=80",
+  ],
+};
+
+const getRandomFallback = (category?: string): string => {
+  const images = FALLBACK_IMAGES[category || ""] || FALLBACK_IMAGES["Default"];
+  return images[Math.floor(Math.random() * images.length)];
+};
+
+const EventImage = ({ uri, style, category }: { uri: string | undefined; style: any; category?: string }) => {
+  const [hasError, setHasError] = useState(false);
+  const [fallbackUri] = useState(() => getRandomFallback(category));
+  
+  return (
+    <Image
+      source={{ uri: hasError ? fallbackUri : (uri || fallbackUri) }}
+      style={style}
+      onError={() => setHasError(true)}
+    />
+  );
+};
+
 export default function EventScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [isSaved, setIsSaved] = useState(false);
+  const [event, setEvent] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Find event by id or use first event
-  const event = mockEvents.find(e => e.id === id) || mockEvents[0];
+  useEffect(() => {
+    if (id) {
+      loadEventDetails();
+      checkSavedStatus();
+    }
+  }, [id]);
+
+  const checkSavedStatus = async () => {
+    try {
+      const savedEvents = await EventsService.getSaved();
+      const isSavedEvent = savedEvents.some((e: any) => e.id === id);
+      setIsSaved(isSavedEvent);
+    } catch (error) {
+      console.log('Error checking saved status', error);
+    }
+  };
+
+  const loadEventDetails = async () => {
+    try {
+      setLoading(true);
+      const data = await EventsService.getDetail(id);
+      setEvent(data);
+    } catch (error) {
+      console.error('Error loading event details:', error);
+      Alert.alert('Error', 'No se pudo cargar la información del evento.');
+      router.back();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleSave = async () => {
+    try {
+      if (isSaved) {
+        await EventsService.unsave(event.id);
+        setIsSaved(false);
+      } else {
+        await EventsService.save(event.id);
+        setIsSaved(true);
+        Alert.alert('Guardado', 'Evento agregado a favoritos');
+      }
+    } catch (error) {
+      console.error('Error toggling save:', error);
+      Alert.alert('Error', 'No se pudo actualizar favoritos');
+    }
+  };
+
+  const handleOpenURL = () => {
+    if (event?.url_externa) {
+      Linking.openURL(event.url_externa).catch(err =>
+        Alert.alert('Error', 'No se pudo abrir el enlace.')
+      );
+    } else {
+      Alert.alert('Aviso', 'Este evento no tiene un sitio web oficial registrado.');
+    }
+  };
+
+  const handleShare = async () => {
+    Alert.alert('Compartir', 'Funcionalidad de compartir próximamente.');
+  };
+
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={COLORS.primaryBlue} />
+      </View>
+    );
+  }
+
+  if (!event) return null;
 
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
-      
-      {/* Hero image with overlay header */}
+
       <View style={styles.heroContainer}>
-        <Image
-          source={{ uri: `https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800` }}
+        <EventImage
+          uri={event.imagen_url}
           style={styles.heroImage}
+          category={event.categoria}
         />
-        
-        {/* Gradient overlay */}
+
         <View style={styles.heroOverlay} />
-        
-        {/* Header buttons */}
+
         <View style={styles.headerButtons}>
-          <Pressable 
+          <Pressable
             onPress={() => router.back()}
             style={styles.headerButton}
           >
             <Ionicons name="arrow-back" size={24} color="white" />
           </Pressable>
-          
-          <Pressable 
-            onPress={() => setIsSaved(!isSaved)}
+
+          <Pressable
+            onPress={toggleSave}
             style={styles.headerButton}
           >
-            <Ionicons 
-              name={isSaved ? "heart" : "heart-outline"} 
-              size={24} 
-              color={isSaved ? "#EF4444" : "white"} 
+            <Ionicons
+              name={isSaved ? "heart" : "heart-outline"}
+              size={24}
+              color={isSaved ? "#EF4444" : "white"}
             />
           </Pressable>
         </View>
-        
-        {/* Category badges */}
+
         <View style={styles.badgesContainer}>
           <View style={styles.badge}>
-            <Text style={styles.badgeText}>Hackathons</Text>
-          </View>
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>Conferencias</Text>
+            <Text style={styles.badgeText}>{event.categoria}</Text>
           </View>
         </View>
       </View>
-      
-      {/* Content */}
-      <ScrollView 
+
+      <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Title section */}
         <Text style={styles.title}>
-          Próximos eventos
+          Detalles del Evento
         </Text>
-        
-        {/* Event card */}
+
         <View style={styles.eventCard}>
           <Text style={styles.eventTitle}>
-            {event.title}
+            {event.titulo}
           </Text>
-          
+
           <View style={styles.eventMeta}>
             <Ionicons name="calendar-outline" size={18} color={COLORS.primaryBlue} />
             <Text style={styles.eventMetaText}>
-              {event.date}
+              {event.fecha}
             </Text>
           </View>
-          
+
           <View style={styles.eventMeta}>
             <Ionicons name="time-outline" size={18} color={COLORS.primaryBlue} />
             <Text style={styles.eventMetaText}>
-              {event.time}
+              {event.hora}
             </Text>
           </View>
-          
+
           <View style={styles.eventMeta}>
             <Ionicons name="location-outline" size={18} color={COLORS.primaryBlue} />
             <Text style={styles.eventMetaText}>
-              {event.location}
+              {event.ubicacion || 'Ubicación por confirmar'}
             </Text>
           </View>
         </View>
-        
-        {/* Description */}
+
         <View style={styles.descriptionCard}>
           <Text style={styles.descriptionTitle}>
             Descripción
           </Text>
           <Text style={styles.descriptionText}>
-            Únete a este increíble evento donde podrás conectar con otros desarrolladores, 
-            aprender nuevas tecnologías y competir por premios increíbles. 
-            No te pierdas esta oportunidad única de crecer profesionalmente.
+            {event.descripcion || 'Sin descripción disponible.'}
           </Text>
         </View>
-        
-        {/* Map preview */}
-        <View style={styles.mapCard}>
-          <View style={styles.mapPreview}>
-            <Ionicons name="map" size={32} color={COLORS.primaryBlue} />
-            <Text style={styles.mapText}>Ver ubicación</Text>
-          </View>
-        </View>
+
+        {event.latitud && event.longitud &&
+          parseFloat(event.latitud) !== 0 && parseFloat(event.longitud) !== 0 &&
+          event.ubicacion?.toLowerCase() !== 'online' && (
+            <Pressable
+              style={styles.mapCard}
+              onPress={() => router.push({ pathname: '/(tabs)/map', params: { id: event.id } })}
+            >
+              <View style={styles.mapPreview}>
+                <Ionicons name="map" size={32} color={COLORS.primaryBlue} />
+                <Text style={styles.mapText}>Ver ubicación en mapa</Text>
+              </View>
+            </Pressable>
+          )}
       </ScrollView>
-      
-      {/* Bottom action bar */}
+
       <View style={styles.bottomBar}>
-        <Pressable style={styles.secondaryButton}>
+        <Pressable style={styles.secondaryButton} onPress={handleShare}>
           <Ionicons name="share-outline" size={20} color={COLORS.primaryBlue} />
           <Text style={styles.secondaryButtonText}>Compartir</Text>
         </Pressable>
-        
-        <Pressable style={styles.primaryButton}>
+
+        <Pressable
+          style={[styles.primaryButton, !event.url_externa && { backgroundColor: COLORS.textMuted }]}
+          onPress={handleOpenURL}
+        >
           <Text style={styles.primaryButtonText}>Página Oficial</Text>
         </Pressable>
       </View>

@@ -36,47 +36,44 @@ export default function EventCard({ event, onPress }: EventCardProps) {
   const getCategoryIcon = () => {
     switch (event.category) {
       case "workshop":
-        return "🔧";
+        return "W";
       case "meetup":
-        return "👥";
+        return "M";
       case "conference":
-        return "🎤";
+        return "C";
       default:
-        return "📅";
+        return "E";
     }
   };
 
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.8}>
-      {/* Left: Icon/Image */}
       <View
         style={[styles.iconContainer, { backgroundColor: getCategoryColor() }]}
       >
         <Text style={styles.categoryIcon}>{getCategoryIcon()}</Text>
       </View>
 
-      {/* Center: Event Info */}
       <View style={styles.infoContainer}>
         <Text style={styles.title} numberOfLines={1}>
           {event.title}
         </Text>
         <Text style={styles.datetime}>
-          📅 {event.date} • ⏰ {event.time}
+          {event.date} • {event.time}
         </Text>
         <Text style={styles.location} numberOfLines={1}>
-          📍 {event.location}
+          {event.location}
         </Text>
       </View>
 
-      {/* Right: Badge */}
       {event.popular && (
         <View style={styles.badge}>
-          <Text style={styles.badgeText}>🔥 Popular</Text>
+          <Text style={styles.badgeText}>Popular</Text>
         </View>
       )}
       {event.spotsLeft && event.spotsLeft <= 5 && (
         <View style={[styles.badge, styles.badgeWarning]}>
-          <Text style={styles.badgeText}>⚡ {event.spotsLeft} cupos</Text>
+          <Text style={styles.badgeText}>{event.spotsLeft} cupos</Text>
         </View>
       )}
     </TouchableOpacity>

@@ -49,7 +49,7 @@ export const mockEvents: Event[] = [
 
 export const userProfile = {
   name: "Diego",
-  avatar: "👨‍💻",
+  avatar: "",
   level: 7,
   streak: 12,
   eventsAttended: 24,

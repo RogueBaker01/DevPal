@@ -1,51 +1,79 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, Image, TextInput, StyleSheet, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  Pressable,
+  Image,
+  StyleSheet,
+  ScrollView,
+  Dimensions,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 
-// Design tokens
-const COLORS = {
-  darkBg: '#0F172A',
-  primaryBlue: '#2563EB',
-  accentCyan: '#22D3EE',
-  white: '#FFFFFF',
-  inputGray: '#F1F5F9',
-  textMuted: '#64748B',
+const { width } = Dimensions.get('window');
+
+const GLASS = {
+  bg: 'rgba(30, 41, 59, 0.7)',
+  bgDark: '#0F172A',
+  border: 'rgba(255, 255, 255, 0.1)',
+  textPrimary: '#F8FAFC',
+  textSecondary: '#94A3B8',
+  accent: '#22D3EE',
+  accentGradient: '#3B82F6',
+  inputBg: 'rgba(15, 23, 42, 0.6)',
+  cardBg: 'rgba(30, 41, 59, 0.6)',
 };
 
-// Interest categories with images based on Figma
 const INTERESTS = [
   { 
     id: 'hackathons', 
-    title: 'Hackathones', 
-    image: 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=400'
+    title: 'Hackathones',
+    description: 'Competencias de desarrollo',
+    icon: 'code-slash',
+    image: 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=400',
   },
   { 
     id: 'conferencias', 
-    title: 'Conferencias', 
-    image: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400'
+    title: 'Conferencias',
+    description: 'Charlas y presentaciones',
+    icon: 'people',
+    image: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400',
   },
   { 
     id: 'talleres', 
-    title: 'Talleres', 
-    image: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=400'
+    title: 'Talleres',
+    description: 'Aprende haciendo',
+    icon: 'construct',
+    image: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=400',
   },
   { 
     id: 'concursos', 
-    title: 'Concursos', 
-    image: 'https://images.unsplash.com/photo-1559223607-a43c990c692c?w=400'
+    title: 'Concursos',
+    description: 'Demuestra tus habilidades',
+    icon: 'trophy',
+    image: 'https://images.unsplash.com/photo-1559223607-a43c990c692c?w=400',
+  },
+  { 
+    id: 'networking', 
+    title: 'Networking',
+    description: 'Conecta con otros devs',
+    icon: 'share-social',
+    image: 'https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=400',
+  },
+  { 
+    id: 'cursos', 
+    title: 'Cursos',
+    description: 'Formación continua',
+    icon: 'school',
+    image: 'https://images.unsplash.com/photo-1501504905252-473c47e087f8?w=400',
   },
 ];
 
-/**
- * Interests Selection Screen (Filtro - actividades)
- * Based on Figma: Blue header with search, image cards in 2x2 grid
- */
 export default function InterestsScreen() {
   const router = useRouter();
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
-  const [customInterest, setCustomInterest] = useState('');
 
   const toggleInterest = (id: string) => {
     setSelectedInterests(prev => 
@@ -59,163 +87,211 @@ export default function InterestsScreen() {
     router.push('/(onboarding)/languages');
   };
 
+  const handleSkip = () => {
+    router.push('/(onboarding)/languages');
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
       
-      {/* Blue header */}
-      <View style={styles.header}>
-        {/* Search bar row */}
-        <View style={styles.searchRow}>
-          {/* Mascot */}
+      <View style={styles.bgCircle1} />
+      <View style={styles.bgCircle2} />
+      <View style={styles.bgCircle3} />
+      
+      <ScrollView 
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        <View style={styles.headerSection}>
           <Image
             source={require('@/assets/images/devpal-mascot.png')}
-            style={styles.mascotIcon}
+            style={styles.mascot}
             resizeMode="contain"
           />
           
-          {/* Search */}
-          <View style={styles.searchContainer}>
-            <Text style={styles.searchText}>Buscar</Text>
-            <Ionicons name="search" size={18} color={COLORS.textMuted} />
+          <View style={styles.progressContainer}>
+            <View style={styles.progressDot} />
+            <View style={[styles.progressDot, styles.progressDotInactive]} />
           </View>
           
-          {/* Icons */}
-          <Pressable style={styles.iconButton}>
-            <Ionicons name="person-circle" size={28} color="white" />
-          </Pressable>
-          <Pressable style={styles.iconButton}>
-            <Ionicons name="notifications" size={24} color="white" />
-          </Pressable>
-        </View>
-        
-        {/* Title */}
-        <Text style={styles.headerTitle}>
-          ¿Cuáles son tus actividades de interés?
-        </Text>
-      </View>
-      
-      {/* Cards section - Blue background */}
-      <View style={styles.cardsSection}>
-        {/* Grid of image cards */}
-        <View style={styles.grid}>
-          {INTERESTS.map((interest) => {
-            const isSelected = selectedInterests.includes(interest.id);
-            return (
-              <Pressable
-                key={interest.id}
-                onPress={() => toggleInterest(interest.id)}
-                style={[
-                  styles.card,
-                  isSelected && styles.cardSelected
-                ]}
-              >
-                <Image 
-                  source={{ uri: interest.image }}
-                  style={styles.cardImage}
-                />
-                <View style={styles.cardOverlay}>
-                  <Text style={styles.cardTitle}>{interest.title}</Text>
-                </View>
-                {isSelected && (
-                  <View style={styles.checkmark}>
-                    <Ionicons name="checkmark" size={14} color="white" />
-                  </View>
-                )}
-              </Pressable>
-            );
-          })}
-        </View>
-        
-        {/* Custom interest input */}
-        <View style={styles.customInputContainer}>
-          <TextInput
-            placeholder="Otra(escribe aquí tus intereses)"
-            placeholderTextColor={COLORS.textMuted}
-            value={customInterest}
-            onChangeText={setCustomInterest}
-            style={styles.customInput}
-          />
-        </View>
-        
-        {/* Next button */}
-        <Pressable 
-          onPress={handleNext}
-          style={styles.nextButton}
-        >
-          <Text style={styles.nextButtonText}>
-            Selecciona todas las de tu interés
+          <Text style={styles.stepText}>Paso 1 de 2</Text>
+          <Text style={styles.title}>¿Qué tipo de eventos te interesan?</Text>
+          <Text style={styles.subtitle}>
+            Selecciona tus actividades favoritas para personalizar tu experiencia
           </Text>
-        </Pressable>
+        </View>
         
-        {/* Bottom event preview */}
-        <View style={styles.eventPreview}>
-          <View style={styles.eventPreviewContent}>
-            <View style={styles.eventIconContainer}>
-              <Image
-                source={require('@/assets/images/devpal-mascot.png')}
-                style={styles.eventIcon}
-                resizeMode="contain"
-              />
-            </View>
-            <Text style={styles.eventPreviewTitle}>Hackathon BLOQUE</Text>
+        <View style={styles.glassCard}>
+          <View style={styles.grid}>
+            {INTERESTS.map((interest) => {
+              const isSelected = selectedInterests.includes(interest.id);
+              return (
+                <Pressable
+                  key={interest.id}
+                  onPress={() => toggleInterest(interest.id)}
+                  style={[
+                    styles.interestCard,
+                    isSelected && styles.interestCardSelected,
+                  ]}
+                >
+                  <Image 
+                    source={{ uri: interest.image }}
+                    style={styles.cardImage}
+                  />
+                  
+                  <View style={styles.cardOverlay}>
+                    <View style={styles.cardContent}>
+                      <View style={[
+                        styles.iconContainer,
+                        isSelected && styles.iconContainerSelected,
+                      ]}>
+                        <Ionicons 
+                          name={interest.icon as any} 
+                          size={22} 
+                          color={isSelected ? GLASS.bgDark : GLASS.textPrimary} 
+                        />
+                      </View>
+                      <Text style={styles.cardTitle}>{interest.title}</Text>
+                      <Text style={styles.cardDescription}>{interest.description}</Text>
+                    </View>
+                    
+                    {isSelected && (
+                      <View style={styles.checkmark}>
+                        <Ionicons name="checkmark" size={14} color={GLASS.bgDark} />
+                      </View>
+                    )}
+                  </View>
+                </Pressable>
+              );
+            })}
           </View>
-          <Pressable style={styles.moreInfoButton}>
-            <Text style={styles.moreInfoText}>Más información</Text>
-            <Ionicons name="chevron-down" size={14} color={COLORS.textMuted} />
+          
+          <View style={styles.selectionInfo}>
+            <Ionicons name="information-circle-outline" size={18} color={GLASS.textSecondary} />
+            <Text style={styles.selectionText}>
+              {selectedInterests.length === 0 
+                ? 'Selecciona al menos una opción'
+                : `${selectedInterests.length} ${selectedInterests.length === 1 ? 'seleccionado' : 'seleccionados'}`
+              }
+            </Text>
+          </View>
+        </View>
+        
+        <View style={styles.buttonsContainer}>
+          <Pressable 
+            onPress={handleNext}
+            style={[
+              styles.nextButton,
+              selectedInterests.length === 0 && styles.buttonDisabled,
+            ]}
+            disabled={selectedInterests.length === 0}
+          >
+            <Text style={styles.nextButtonText}>Continuar</Text>
+            <Ionicons name="arrow-forward" size={20} color={GLASS.bgDark} />
+          </Pressable>
+          
+          <Pressable onPress={handleSkip} style={styles.skipButton}>
+            <Text style={styles.skipButtonText}>Omitir por ahora</Text>
           </Pressable>
         </View>
-      </View>
+      </ScrollView>
     </View>
   );
 }
 
+const CARD_WIDTH = (width - 72) / 2;
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.primaryBlue,
+    backgroundColor: GLASS.bgDark,
   },
-  header: {
-    paddingTop: 48,
-    paddingHorizontal: 16,
-    paddingBottom: 16,
+  bgCircle1: {
+    position: 'absolute',
+    width: 300,
+    height: 300,
+    borderRadius: 150,
+    backgroundColor: 'rgba(34, 211, 238, 0.08)',
+    top: -100,
+    right: -100,
   },
-  searchRow: {
-    flexDirection: 'row',
+  bgCircle2: {
+    position: 'absolute',
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: 'rgba(59, 130, 246, 0.08)',
+    top: 400,
+    left: -80,
+  },
+  bgCircle3: {
+    position: 'absolute',
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    backgroundColor: 'rgba(34, 211, 238, 0.05)',
+    bottom: 100,
+    right: -50,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: 24,
+    paddingTop: 60,
+    paddingBottom: 40,
+  },
+  headerSection: {
     alignItems: 'center',
-    gap: 8,
+    marginBottom: 24,
+  },
+  mascot: {
+    width: 80,
+    height: 80,
     marginBottom: 16,
   },
-  mascotIcon: {
-    width: 36,
-    height: 36,
-  },
-  searchContainer: {
-    flex: 1,
-    backgroundColor: COLORS.white,
-    borderRadius: 20,
+  progressContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    gap: 8,
+    marginBottom: 12,
   },
-  searchText: {
-    color: COLORS.textMuted,
-    fontSize: 14,
+  progressDot: {
+    width: 32,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: GLASS.accent,
   },
-  iconButton: {
-    padding: 4,
+  progressDotInactive: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
-  headerTitle: {
-    color: COLORS.white,
-    fontSize: 18,
+  stepText: {
+    fontSize: 13,
+    color: GLASS.textSecondary,
+    marginBottom: 8,
+  },
+  title: {
+    fontSize: 24,
     fontWeight: '700',
+    color: GLASS.textPrimary,
     textAlign: 'center',
+    marginBottom: 8,
   },
-  cardsSection: {
-    flex: 1,
+  subtitle: {
+    fontSize: 14,
+    color: GLASS.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20,
     paddingHorizontal: 16,
+  },
+  glassCard: {
+    backgroundColor: GLASS.bg,
+    borderRadius: 24,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: GLASS.border,
   },
   grid: {
     flexDirection: 'row',
@@ -223,16 +299,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: 12,
   },
-  card: {
-    width: '48%',
-    height: 130,
-    borderRadius: 12,
+  interestCard: {
+    width: CARD_WIDTH,
+    height: 140,
+    borderRadius: 16,
     overflow: 'hidden',
-    position: 'relative',
+    borderWidth: 2,
+    borderColor: 'transparent',
   },
-  cardSelected: {
-    borderWidth: 3,
-    borderColor: COLORS.accentCyan,
+  interestCardSelected: {
+    borderColor: GLASS.accent,
   },
   cardImage: {
     width: '100%',
@@ -241,87 +317,89 @@ const styles = StyleSheet.create({
   },
   cardOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.35)',
+    backgroundColor: 'rgba(15, 23, 42, 0.75)',
+    padding: 12,
+  },
+  cardContent: {
+    flex: 1,
     justifyContent: 'flex-end',
-    padding: 10,
+  },
+  iconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  iconContainerSelected: {
+    backgroundColor: GLASS.accent,
   },
   cardTitle: {
-    color: COLORS.white,
     fontSize: 14,
     fontWeight: '700',
+    color: GLASS.textPrimary,
+    marginBottom: 2,
+  },
+  cardDescription: {
+    fontSize: 11,
+    color: GLASS.textSecondary,
   },
   checkmark: {
     position: 'absolute',
-    top: 8,
-    right: 8,
-    backgroundColor: COLORS.accentCyan,
-    borderRadius: 10,
-    padding: 3,
+    top: 10,
+    right: 10,
+    backgroundColor: GLASS.accent,
+    borderRadius: 12,
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  customInputContainer: {
+  selectionInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
     marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: GLASS.border,
   },
-  customInput: {
-    backgroundColor: COLORS.white,
-    borderRadius: 24,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
+  selectionText: {
     fontSize: 14,
-    color: COLORS.darkBg,
+    color: GLASS.textSecondary,
+  },
+  buttonsContainer: {
+    marginTop: 24,
+    gap: 12,
   },
   nextButton: {
-    backgroundColor: COLORS.white,
-    borderRadius: 24,
-    paddingVertical: 14,
+    backgroundColor: GLASS.accent,
+    height: 56,
+    borderRadius: 16,
     alignItems: 'center',
-    marginTop: 12,
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 8,
+  },
+  buttonDisabled: {
+    opacity: 0.5,
   },
   nextButtonText: {
-    color: COLORS.primaryBlue,
-    fontSize: 14,
-    fontWeight: '600',
+    color: GLASS.bgDark,
+    fontSize: 17,
+    fontWeight: '700',
   },
-  eventPreview: {
-    backgroundColor: COLORS.primaryBlue,
-    borderRadius: 12,
-    padding: 12,
-    marginTop: 16,
-    flexDirection: 'row',
+  skipButton: {
+    height: 48,
     alignItems: 'center',
-    justifyContent: 'space-between',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
+    justifyContent: 'center',
   },
-  eventPreviewContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  eventIconContainer: {
-    backgroundColor: COLORS.white,
-    borderRadius: 16,
-    padding: 4,
-    marginRight: 10,
-  },
-  eventIcon: {
-    width: 20,
-    height: 20,
-  },
-  eventPreviewTitle: {
-    color: COLORS.white,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  moreInfoButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.white,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 14,
-    gap: 4,
-  },
-  moreInfoText: {
-    color: COLORS.textMuted,
-    fontSize: 11,
+  skipButtonText: {
+    color: GLASS.textSecondary,
+    fontSize: 15,
+    fontWeight: '500',
   },
 });

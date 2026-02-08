@@ -20,7 +20,6 @@ export default function AIChatBubble({
         isUser ? styles.userContainer : styles.aiContainer,
       ]}
     >
-      {/* AI Avatar with Mascot Image */}
       {!isUser && (
         <View style={styles.avatar}>
           <Image
@@ -31,7 +30,6 @@ export default function AIChatBubble({
         </View>
       )}
 
-      {/* Message Bubble */}
       <View
         style={[styles.bubble, isUser ? styles.userBubble : styles.aiBubble]}
       >
@@ -55,7 +53,6 @@ export default function AIChatBubble({
         )}
       </View>
 
-      {/* User spacer (for alignment) */}
       {isUser && <View style={styles.spacer} />}
     </View>
   );

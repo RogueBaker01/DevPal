@@ -60,7 +60,6 @@ export default function ChubbyButton({
         disabled && styles.disabled,
       ]}
     >
-      {/* Shadow layer */}
       <Animated.View
         style={[
           styles.shadow,
@@ -69,7 +68,6 @@ export default function ChubbyButton({
         ]}
       />
 
-      {/* Button layer */}
       <Animated.View
         style={[
           styles.button,

@@ -1,209 +1,375 @@
 import React, { useState } from "react";
-import { View, Text, Pressable, ScrollView, StyleSheet, Image, Modal } from "react-native";
+import {
+  View,
+  Text,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Image,
+  Modal,
+  ActivityIndicator,
+  Linking,
+  TextInput,
+  Alert
+} from "react-native";
 import { StatusBar } from "expo-status-bar";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { BlurView } from "expo-blur";
+import * as ImagePicker from 'expo-image-picker';
+import { COLORS, RADIUS, SPACING, TYPOGRAPHY, SHADOWS } from "@/constants/designTokens";
+import { AuthService } from "@/services/authService";
+import { ProgressCircle } from "@/components/ProgressCircle";
+import { useAuth } from "@/contexts/AuthContext";
+import { BASE_URL } from "@/constants/Config";
 
-// Design tokens
-const COLORS = {
-  darkBg: '#0F172A',
-  primaryBlue: '#2563EB',
-  accentCyan: '#22D3EE',
-  white: '#FFFFFF',
-  inputGray: '#F1F5F9',
-  textMuted: '#64748B',
+const GLASS = {
+  bg: 'rgba(30, 41, 59, 0.7)',
+  border: 'rgba(255, 255, 255, 0.1)',
+  textPrimary: '#F8FAFC',
+  textSecondary: '#94A3B8',
+  accent: '#22D3EE',
 };
-
-// User profile data
-const USER_PROFILE = {
-  name: 'Juan García',
-  email: 'juan@example.com',
-  avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
-  events: 12,
-  certificates: 5,
-  achievements: 3,
-};
-
-// Portfolio events
-const PORTFOLIO_EVENTS = [
-  { id: '1', title: 'Hackathon Nacional 2024', date: '10 Feb 2024', status: 'Ganador', time: '9:00 AM', location: 'Centro de Convenciones' },
-  { id: '2', title: 'Conferencia DevOps México', date: '2 Feb 2024', status: 'Asistido', time: '10:00 AM', location: 'Auditorio Principal' },
-  { id: '3', title: 'Taller React Native', date: '28 Ene 2024', status: 'Completado', time: '2:00 PM', location: 'Startup Campus' },
-];
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const [expandedEvent, setExpandedEvent] = useState<string | null>(null);
+  const { signOut } = useAuth();
+  const [profile, setProfile] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [showProjectModal, setShowProjectModal] = useState(false);
   const [showAccountMenu, setShowAccountMenu] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
-  const navigateToSearch = () => router.push('/search');
-  const navigateToNotifications = () => router.push('/notifications');
-  const navigateToSettings = () => {
-    setShowAccountMenu(false);
-    router.push('/settings');
+  const [newProject, setNewProject] = useState({
+    titulo: '',
+    descripcion: '',
+    tecnologias: '',
+    url_repositorio: '',
+    url_demo: ''
+  });
+  const [submitting, setSubmitting] = useState(false);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      loadProfile();
+    }, [])
+  );
+
+  const loadProfile = async () => {
+    try {
+      const data = await AuthService.getProfile();
+      setProfile(data);
+    } catch (error) {
+      console.error('Error loading profile:', error);
+    } finally {
+      setLoading(false);
+    }
   };
-  const handleLogout = () => {
-    setShowAccountMenu(false);
-    router.replace('/(auth)/welcome');
+
+  const handleAddProject = async () => {
+    if (!newProject.titulo || !newProject.descripcion) {
+      Alert.alert("Error", "El título y la descripción son obligatorios.");
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      const techs = newProject.tecnologias.split(',').map(t => t.trim()).filter(Boolean);
+
+      await AuthService.addProject({
+        titulo: newProject.titulo,
+        descripcion: newProject.descripcion,
+        tecnologias: techs,
+        url_repositorio: newProject.url_repositorio || undefined,
+        url_demo: newProject.url_demo || undefined
+      });
+
+      Alert.alert("¡Proyecto Agregado!", "Has ganado XP por compartir tu trabajo.", [
+        {
+          text: "Genial", onPress: () => {
+            setShowProjectModal(false);
+            setNewProject({ titulo: '', descripcion: '', tecnologias: '', url_repositorio: '', url_demo: '' });
+            loadProfile(); // Recargar para ver nueva XP y proyecto
+          }
+        }
+      ]);
+    } catch (error) {
+      Alert.alert("Error", "No se pudo guardar el proyecto. Intenta nuevamente.");
+      console.error(error);
+    } finally {
+      setSubmitting(false);
+    }
   };
+
+  const handleLogout = async () => {
+    setShowAccountMenu(false);
+    await signOut();
+  };
+
+  const handlePickAvatar = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permiso denegado', 'Necesitamos acceso a tu galería para cambiar la foto.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.5,
+    });
+
+    if (!result.canceled) {
+      uploadAvatar(result.assets[0].uri);
+    }
+  };
+
+  const uploadAvatar = async (uri: string) => {
+    setUploadingAvatar(true);
+    try {
+      const response = await AuthService.uploadAvatar(uri);
+
+      let fullUrl = response.avatar_url;
+      if (fullUrl && fullUrl.startsWith('/')) {
+        const { BASE_URL } = require('@/constants/Config');
+        fullUrl = `${BASE_URL}${response.avatar_url}`;
+      }
+
+      setProfile((prev: any) => ({
+        ...prev,
+        avatar_url: fullUrl,
+      }));
+
+      Alert.alert("Éxito", "Foto de perfil actualizada");
+    } catch (error) {
+      console.error("Upload failed", error);
+      Alert.alert("Error", "No se pudo subir la imagen");
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
+  if (loading && !profile) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={GLASS.accent} />
+      </View>
+    );
+  }
+
+  if (!profile) return null;
+
+  const { perfil, recent_activity } = profile;
+
+  const levelProgress = (perfil.xp_nivel_actual / 1000) * 100;
 
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
-      
-      {/* SOLID BLUE Header */}
-      <View style={styles.header}>
-        <View style={styles.searchRow}>
-          <Image
-            source={require('@/assets/images/devpal-mascot.png')}
-            style={styles.mascotIcon}
-            resizeMode="contain"
-          />
-          
-          <Pressable style={styles.searchContainer} onPress={navigateToSearch}>
-            <Text style={styles.searchText}>Buscar</Text>
-            <Ionicons name="search" size={18} color={COLORS.primaryBlue} />
-          </Pressable>
-          
-          <Pressable style={styles.iconButton} onPress={() => setShowAccountMenu(true)}>
-            <Ionicons name="person-circle" size={28} color="white" />
-          </Pressable>
-          
-          <Pressable style={styles.iconButton} onPress={navigateToNotifications}>
-            <Ionicons name="notifications" size={24} color="white" />
-          </Pressable>
-        </View>
-      </View>
-      
-      {/* Content */}
-      <ScrollView 
-        style={styles.scrollView}
+
+      <View style={styles.bgGradient} />
+      <View style={styles.bgCircle1} />
+      <View style={styles.bgCircle2} />
+
+      <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Profile card */}
-        <View style={styles.profileCard}>
-          <Image source={{ uri: USER_PROFILE.avatar }} style={styles.avatar} />
-          <View style={styles.profileInfo}>
-            <Text style={styles.profileName}>{USER_PROFILE.name}</Text>
-            <Text style={styles.profileEmail}>{USER_PROFILE.email}</Text>
+        <BlurView intensity={40} tint="dark" style={styles.glassCard}>
+          <View style={styles.headerTop}>
+            <Text style={styles.headerTitle}>Mi Perfil</Text>
+            <Pressable onPress={() => setShowAccountMenu(true)} style={styles.settingsBtn}>
+              <Ionicons name="settings-outline" size={24} color={GLASS.textSecondary} />
+            </Pressable>
           </View>
-          <Pressable onPress={navigateToSettings}>
-            <Ionicons name="settings-outline" size={24} color={COLORS.textMuted} />
-          </Pressable>
-        </View>
-        
-        {/* Stats */}
-        <View style={styles.statsCard}>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{USER_PROFILE.events}</Text>
-            <Text style={styles.statLabel}>Eventos</Text>
+
+          <View style={styles.profileHeaderContent}>
+            <View style={styles.avatarContainer}>
+              <Image
+                source={profile.avatar_url ? { uri: profile.avatar_url } : { uri: 'https://ui-avatars.com/api/?name=' + profile.nombre + '+' + profile.apellidos }}
+                style={styles.avatar}
+              />
+              <Pressable style={styles.editAvatarBtn} onPress={handlePickAvatar} disabled={uploadingAvatar}>
+                {uploadingAvatar ? <ActivityIndicator size="small" color="#FFF" /> : <Ionicons name="pencil" size={14} color="#FFF" />}
+              </Pressable>
+            </View>
+            <View style={styles.profileMainInfo}>
+              <Text style={styles.profileName}>{profile.nombre} {profile.apellidos}</Text>
+              <View style={styles.levelBadge}>
+                <Ionicons name="sparkles" size={14} color={GLASS.accent} />
+                <Text style={styles.levelText}>Nivel {perfil.nivel}</Text>
+              </View>
+            </View>
           </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{USER_PROFILE.certificates}</Text>
-            <Text style={styles.statLabel}>Certificados</Text>
+
+          <View style={styles.xpSection}>
+            <View style={styles.xpLabels}>
+              <Text style={styles.xpText}>XP {perfil.xp_nivel_actual} / 1000</Text>
+              <Text style={styles.xpTotal}>Total: {perfil.xp}</Text>
+            </View>
+            <View style={styles.xpTrack}>
+              <View style={[styles.xpThumb, { width: `${levelProgress}%` }]} />
+            </View>
           </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{USER_PROFILE.achievements}</Text>
+        </BlurView>
+
+        <View style={styles.statsRow}>
+          <View style={styles.statCard}>
+            <Ionicons name="trophy" size={24} color="#F59E0B" />
+            <Text style={styles.statValue}>{perfil.logros}</Text>
             <Text style={styles.statLabel}>Logros</Text>
           </View>
+          <View style={styles.statCard}>
+            <Ionicons name="ribbon" size={24} color="#10B981" />
+            <Text style={styles.statValue}>{perfil.certificados}</Text>
+            <Text style={styles.statLabel}>Certificados</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Ionicons name="flame" size={24} color="#EF4444" />
+            <Text style={styles.statValue}>{perfil.racha_dias}</Text>
+            <Text style={styles.statLabel}>Racha Días</Text>
+          </View>
         </View>
-        
-        {/* Portfolio section */}
-        <Text style={styles.sectionTitle}>Mi Portafolio</Text>
-        
-        {PORTFOLIO_EVENTS.map((event) => {
-          const isExpanded = expandedEvent === event.id;
-          return (
-            <View key={event.id} style={styles.eventCard}>
-              <View style={styles.eventCardHeader}>
-                <View style={styles.eventCardLeft}>
-                  <View style={styles.eventIconContainer}>
-                    <Image
-                      source={require('@/assets/images/devpal-mascot.png')}
-                      style={styles.eventIcon}
-                      resizeMode="contain"
-                    />
-                  </View>
-                  <View style={styles.eventDetails}>
-                    <Text style={styles.eventTitle}>{event.title}</Text>
-                  </View>
-                </View>
-                
-                <Pressable 
-                  style={styles.moreInfoButton}
-                  onPress={() => setExpandedEvent(isExpanded ? null : event.id)}
-                >
-                  <Text style={styles.moreInfoText}>Más información</Text>
-                  <Ionicons 
-                    name={isExpanded ? "chevron-up" : "chevron-down"} 
-                    size={16} 
-                    color={COLORS.textMuted} 
-                  />
-                </Pressable>
+
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Portafolio & Actividad</Text>
+          <Pressable style={styles.addProjectBtn} onPress={() => setShowProjectModal(true)}>
+            <Ionicons name="add" size={16} color="#FFF" />
+            <Text style={styles.addProjectText}>Proyecto</Text>
+          </Pressable>
+        </View>
+
+        {recent_activity && recent_activity.length > 0 ? (
+          recent_activity.map((item: any, index: number) => (
+            <BlurView key={item.id || index} intensity={20} tint="dark" style={styles.activityItem}>
+              <View style={[styles.activityIcon, { backgroundColor: item.color + '20' }]}>
+                <Ionicons name={item.icon || 'ellipse'} size={20} color={item.color} />
               </View>
-              
-              {isExpanded && (
-                <View style={styles.eventExpanded}>
-                  <View style={styles.eventDetail}>
-                    <Ionicons name="calendar-outline" size={16} color={COLORS.primaryBlue} />
-                    <Text style={styles.eventDetailText}>{event.date}</Text>
+              <View style={styles.activityInfo}>
+                <Text style={styles.activityTitle}>{item.title}</Text>
+                <Text style={styles.activityDate}>{item.date} • {item.status}</Text>
+
+                {item.type === 'project' && (
+                  <View style={styles.projectTags}>
+                    {item.tecnologias && item.tecnologias.map((tech: string, i: number) => (
+                      <View key={i} style={styles.techTag}>
+                        <Text style={styles.techText}>{tech}</Text>
+                      </View>
+                    ))}
+                    {item.url_demo && (
+                      <Pressable onPress={() => Linking.openURL(item.url_demo)}>
+                        <Ionicons name="open-outline" size={16} color={GLASS.accent} />
+                      </Pressable>
+                    )}
                   </View>
-                  <View style={styles.eventDetail}>
-                    <Ionicons name="time-outline" size={16} color={COLORS.primaryBlue} />
-                    <Text style={styles.eventDetailText}>{event.time}</Text>
-                  </View>
-                  <View style={styles.eventDetail}>
-                    <Ionicons name="location-outline" size={16} color={COLORS.primaryBlue} />
-                    <Text style={styles.eventDetailText}>{event.location}</Text>
-                  </View>
-                  <View style={styles.statusRow}>
-                    <Text style={styles.statusLabel}>Estado:</Text>
-                    <View style={[
-                      styles.statusBadge,
-                      event.status === 'Ganador' && styles.statusBadgeHighlight
-                    ]}>
-                      <Text style={[
-                        styles.statusText,
-                        event.status === 'Ganador' && styles.statusTextHighlight
-                      ]}>
-                        {event.status}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-              )}
-            </View>
-          );
-        })}
+                )}
+              </View>
+            </BlurView>
+          ))
+        ) : (
+          <View style={styles.emptyState}>
+            <Ionicons name="folder-open-outline" size={48} color={GLASS.textSecondary} />
+            <Text style={styles.emptyText}>No hay actividad reciente.</Text>
+            <Text style={styles.emptySub}>¡Completa retos o sube un proyecto!</Text>
+          </View>
+        )}
+
       </ScrollView>
-      
-      {/* Account Dropdown Modal */}
+
+      <Modal visible={showProjectModal} animationType="slide" transparent>
+        <BlurView intensity={95} tint="dark" style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Nuevo Proyecto</Text>
+              <Pressable onPress={() => setShowProjectModal(false)}>
+                <Ionicons name="close-circle" size={30} color={GLASS.textSecondary} />
+              </Pressable>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <Text style={styles.inputLabel}>Título del Proyecto *</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Ej: E-commerce React Native"
+                placeholderTextColor="#64748B"
+                value={newProject.titulo}
+                onChangeText={(t) => setNewProject({ ...newProject, titulo: t })}
+              />
+
+              <Text style={styles.inputLabel}>Descripción *</Text>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                placeholder="Describe brevemente tu proyecto..."
+                placeholderTextColor="#64748B"
+                multiline
+                numberOfLines={3}
+                value={newProject.descripcion}
+                onChangeText={(t) => setNewProject({ ...newProject, descripcion: t })}
+              />
+
+              <Text style={styles.inputLabel}>Tecnologías (separadas por coma)</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="React, Node.js, Python..."
+                placeholderTextColor="#64748B"
+                value={newProject.tecnologias}
+                onChangeText={(t) => setNewProject({ ...newProject, tecnologias: t })}
+              />
+
+              <Text style={styles.inputLabel}>URL Repositorio (Opcional)</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="https://github.com/..."
+                placeholderTextColor="#64748B"
+                value={newProject.url_repositorio}
+                onChangeText={(t) => setNewProject({ ...newProject, url_repositorio: t })}
+              />
+
+              <Text style={styles.inputLabel}>URL Demo (Opcional)</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="https://mi-proyecto.com"
+                placeholderTextColor="#64748B"
+                value={newProject.url_demo}
+                onChangeText={(t) => setNewProject({ ...newProject, url_demo: t })}
+              />
+
+              <Pressable
+                style={[styles.submitBtn, submitting && styles.btnDisabled]}
+                onPress={handleAddProject}
+                disabled={submitting}
+              >
+                {submitting ? (
+                  <ActivityIndicator color="#FFF" />
+                ) : (
+                  <Text style={styles.submitBtnText}>Publicar Proyecto (+XP)</Text>
+                )}
+              </Pressable>
+            </ScrollView>
+          </View>
+        </BlurView>
+      </Modal>
+
       <Modal
         visible={showAccountMenu}
         transparent
         animationType="fade"
         onRequestClose={() => setShowAccountMenu(false)}
       >
-        <Pressable 
-          style={styles.modalOverlay}
+        <Pressable
+          style={styles.dropdownOverlay}
           onPress={() => setShowAccountMenu(false)}
         >
           <View style={styles.accountDropdown}>
-            <Pressable style={styles.dropdownItem} onPress={navigateToSettings}>
-              <Ionicons name="settings-outline" size={20} color={COLORS.darkBg} />
-              <Text style={styles.dropdownItemText}>Configuración</Text>
-            </Pressable>
-            <View style={styles.dropdownDivider} />
             <Pressable style={styles.dropdownItem} onPress={handleLogout}>
               <Ionicons name="log-out-outline" size={20} color="#EF4444" />
-              <Text style={[styles.dropdownItemText, { color: '#EF4444' }]}>Cerrar sesión</Text>
+              <Text style={{ color: '#EF4444' }}>Cerrar sesión</Text>
             </Pressable>
           </View>
         </Pressable>
       </Modal>
+
     </View>
   );
 }
@@ -211,226 +377,351 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.white,
+    backgroundColor: '#0F172A',
   },
-  header: {
-    backgroundColor: COLORS.primaryBlue,
-    paddingTop: 48,
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-  },
-  searchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  mascotIcon: {
-    width: 36,
-    height: 36,
-  },
-  searchContainer: {
+  loadingContainer: {
     flex: 1,
-    backgroundColor: COLORS.white,
-    borderRadius: 20,
-    flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    backgroundColor: '#0F172A'
   },
-  searchText: {
-    color: COLORS.textMuted,
-    fontSize: 14,
+  bgGradient: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#0F172A',
   },
-  iconButton: {
-    padding: 4,
+  bgCircle1: {
+    position: 'absolute',
+    width: 300,
+    height: 300,
+    borderRadius: 150,
+    backgroundColor: '#2563EB',
+    opacity: 0.15,
+    top: -50,
+    left: -50,
+    transform: [{ scale: 1.2 }],
   },
-  scrollView: {
-    flex: 1,
+  bgCircle2: {
+    position: 'absolute',
+    width: 250,
+    height: 250,
+    borderRadius: 125,
+    backgroundColor: '#22D3EE',
+    opacity: 0.1,
+    top: 100,
+    right: -80,
   },
   scrollContent: {
     padding: 20,
-    paddingBottom: 120,
+    paddingTop: 60,
+    paddingBottom: 130,
   },
-  profileCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.inputGray,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-  },
-  avatar: {
-    width: 60,
-    height: 60,
+  glassCard: {
+    padding: 24,
     borderRadius: 30,
-  },
-  profileInfo: {
-    flex: 1,
-    marginLeft: 16,
-  },
-  profileName: {
-    color: COLORS.darkBg,
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  profileEmail: {
-    color: COLORS.textMuted,
-    fontSize: 14,
-  },
-  statsCard: {
-    flexDirection: 'row',
-    backgroundColor: COLORS.primaryBlue,
-    borderRadius: 16,
-    padding: 20,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: GLASS.border,
     marginBottom: 24,
   },
-  statItem: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  statDivider: {
-    width: 1,
-    backgroundColor: 'rgba(255,255,255,0.3)',
-  },
-  statNumber: {
-    color: COLORS.white,
-    fontSize: 24,
-    fontWeight: '700',
-  },
-  statLabel: {
-    color: 'rgba(255,255,255,0.8)',
-    fontSize: 12,
-    marginTop: 4,
-  },
-  sectionTitle: {
-    color: COLORS.darkBg,
-    fontSize: 20,
-    fontWeight: '700',
-    marginBottom: 16,
-  },
-  eventCard: {
-    backgroundColor: COLORS.primaryBlue,
-    borderRadius: 12,
-    marginBottom: 12,
-    overflow: 'hidden',
-  },
-  eventCardHeader: {
+  headerTop: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 14,
+    alignItems: 'center',
+    marginBottom: 20,
   },
-  eventCardLeft: {
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: GLASS.textPrimary,
+  },
+  settingsBtn: {
+    padding: 8,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 12,
+  },
+  profileHeaderContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    flex: 1,
+    marginBottom: 24,
   },
-  eventIconContainer: {
-    backgroundColor: COLORS.white,
-    borderRadius: 20,
-    padding: 6,
-    marginRight: 12,
+  avatar: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 2,
+    borderColor: GLASS.accent,
   },
-  eventIcon: {
+  avatarContainer: {
+    position: 'relative',
+  },
+  editAvatarBtn: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: GLASS.accent,
     width: 24,
     height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#1E293B',
   },
-  eventDetails: {
+  profileMainInfo: {
+    marginLeft: 16,
     flex: 1,
   },
-  eventTitle: {
-    color: COLORS.white,
-    fontSize: 14,
-    fontWeight: '600',
+  profileName: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: GLASS.textPrimary,
+    marginBottom: 6,
   },
-  moreInfoButton: {
+  levelBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.white,
+    backgroundColor: 'rgba(34, 211, 238, 0.15)',
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 6,
+    borderRadius: 20,
+    alignSelf: 'flex-start',
+    gap: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(34, 211, 238, 0.3)',
+  },
+  levelText: {
+    color: GLASS.accent,
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  xpSection: {
+    marginTop: 8,
+  },
+  xpLabels: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  xpText: {
+    color: GLASS.accent,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  xpTotal: {
+    color: GLASS.textSecondary,
+    fontSize: 12,
+  },
+  xpTrack: {
+    height: 6,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  xpThumb: {
+    height: '100%',
+    backgroundColor: GLASS.accent,
+    borderRadius: 3,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+    marginBottom: 32,
+  },
+  statCard: {
+    flex: 1,
+    backgroundColor: 'rgba(30, 41, 59, 0.6)',
+    padding: 16,
+    borderRadius: 24,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: GLASS.border,
+    aspectRatio: 1,
+    justifyContent: 'center',
+  },
+  statValue: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: GLASS.textPrimary,
+    marginVertical: 4,
+  },
+  statLabel: {
+    fontSize: 12,
+    color: GLASS.textSecondary,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: GLASS.textPrimary,
+  },
+  addProjectBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: GLASS.accent,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: 16,
     gap: 4,
+    shadowColor: GLASS.accent,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
   },
-  moreInfoText: {
-    color: COLORS.textMuted,
+  addProjectText: {
+    color: '#0F172A',
+    fontWeight: 'bold',
     fontSize: 12,
   },
-  eventExpanded: {
-    backgroundColor: COLORS.white,
+  activityItem: {
+    flexDirection: 'row',
     padding: 16,
-    gap: 10,
+    borderRadius: 20,
+    marginBottom: 12,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(30, 41, 59, 0.4)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
-  eventDetail: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  eventDetailText: {
-    color: COLORS.darkBg,
-    fontSize: 14,
-  },
-  statusRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginTop: 4,
-  },
-  statusLabel: {
-    color: COLORS.darkBg,
-    fontSize: 14,
-  },
-  statusBadge: {
-    backgroundColor: COLORS.primaryBlue,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
+  activityIcon: {
+    width: 40,
+    height: 40,
     borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
   },
-  statusBadgeHighlight: {
-    backgroundColor: COLORS.accentCyan,
+  activityInfo: {
+    flex: 1,
   },
-  statusText: {
-    color: COLORS.white,
+  activityTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: GLASS.textPrimary,
+    marginBottom: 4,
+  },
+  activityDate: {
     fontSize: 12,
+    color: GLASS.textSecondary,
+  },
+  projectTags: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 8,
+    alignItems: 'center',
+  },
+  techTag: {
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  techText: {
+    color: GLASS.textSecondary,
+    fontSize: 10,
+  },
+  emptyState: {
+    alignItems: 'center',
+    padding: 40,
+    backgroundColor: 'rgba(255,255,255,0.02)',
+    borderRadius: 20,
+    borderStyle: 'dashed',
+    borderWidth: 1,
+    borderColor: GLASS.border,
+  },
+  emptyText: {
+    color: GLASS.textPrimary,
+    marginTop: 16,
+    fontSize: 16,
     fontWeight: '600',
   },
-  statusTextHighlight: {
-    color: COLORS.darkBg,
+  emptySub: {
+    color: GLASS.textSecondary,
+    marginTop: 4,
   },
-  modalOverlay: {
+  modalContainer: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    justifyContent: 'flex-start',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#1E293B',
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    padding: 24,
+    height: '85%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#F8FAFC',
+  },
+  inputLabel: {
+    color: '#94A3B8',
+    fontSize: 14,
+    marginBottom: 8,
+    marginTop: 16,
+  },
+  input: {
+    backgroundColor: '#0F172A',
+    borderRadius: 12,
+    padding: 16,
+    color: '#F8FAFC',
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  textArea: {
+    height: 100,
+    textAlignVertical: 'top',
+  },
+  submitBtn: {
+    backgroundColor: GLASS.accent,
+    borderRadius: 16,
+    padding: 18,
+    alignItems: 'center',
+    marginTop: 32,
+    marginBottom: 48,
+    shadowColor: GLASS.accent,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  btnDisabled: {
+    opacity: 0.7,
+  },
+  submitBtnText: {
+    color: '#0F172A',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  dropdownOverlay: {
+    flex: 1,
     alignItems: 'flex-end',
-    paddingTop: 100,
-    paddingRight: 16,
+    paddingTop: 80,
+    paddingRight: 20
   },
   accountDropdown: {
-    backgroundColor: COLORS.white,
+    backgroundColor: 'white',
+    padding: 16,
     borderRadius: 12,
-    paddingVertical: 8,
-    minWidth: 180,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 10,
+    minWidth: 150,
+    elevation: 10
   },
   dropdownItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    gap: 12,
-  },
-  dropdownItemText: {
-    fontSize: 16,
-    color: COLORS.darkBg,
-  },
-  dropdownDivider: {
-    height: 1,
-    backgroundColor: COLORS.inputGray,
-    marginHorizontal: 16,
-  },
+    gap: 10
+  }
 });

@@ -11,10 +11,6 @@ interface FilterCardProps {
   size?: 'small' | 'medium' | 'large';
 }
 
-/**
- * Selectable filter card for onboarding grids
- * Shows checkmark when selected, thick blue border
- */
 export default function FilterCard({ 
   title, 
   image, 
@@ -57,7 +53,6 @@ export default function FilterCard({
         </View>
       )}
       
-      {/* Checkmark overlay when selected */}
       {selected && (
         <View className="absolute top-2 right-2 bg-primary-blue rounded-full p-1">
           <Ionicons name="checkmark" size={16} color="white" />
