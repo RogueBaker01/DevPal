@@ -1,18 +1,19 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, Pressable, Image, ScrollView, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, Pressable, Image, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
-import { mockEvents } from '@/constants/MockData';
+import { BlurView } from 'expo-blur';
+import { EventsService } from '@/services/eventsService';
 
-// Design tokens
-const COLORS = {
-  darkBg: '#0F172A',
-  primaryBlue: '#2563EB',
-  accentCyan: '#22D3EE',
-  white: '#FFFFFF',
-  inputGray: '#F1F5F9',
-  textMuted: '#64748B',
+// GLASS Tokens (Matching Profile/Settings)
+const GLASS = {
+  bg: 'rgba(30, 41, 59, 0.7)',
+  border: 'rgba(255, 255, 255, 0.1)',
+  textPrimary: '#F8FAFC',
+  textSecondary: '#94A3B8',
+  accent: '#22D3EE',
+  inputBg: 'rgba(15, 23, 42, 0.6)',
 };
 
 // Recent searches
@@ -27,72 +28,98 @@ const SUGGESTIONS = [
   'Santiago de Querétaro',
 ];
 
-/**
- * Search Screen (Búsqueda)
- * Fixed: Solid Blue Header matching other screens
- */
 export default function SearchScreen() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
-  const [showDropdown, setShowDropdown] = useState(true);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [events, setEvents] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+
+  // Load events from API
+  useEffect(() => {
+    loadEvents();
+  }, [selectedCategory]);
+
+  const loadEvents = async () => {
+    try {
+      setLoading(true);
+      const data = await EventsService.getAll(selectedCategory, 50, 0);
+      setEvents(data);
+    } catch (error) {
+      console.error('Error loading events:', error);
+      setEvents([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const navigateToNotifications = () => router.push('/notifications');
 
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
-      
-      {/* SOLID BLUE Header */}
-      <View style={styles.header}>
+      {/* Background Decorativo */}
+      <View style={styles.bgGradient} />
+      <View style={styles.bgCircle1} />
+      <View style={styles.bgCircle2} />
+
+      {/* Glass Header */}
+      <BlurView intensity={30} tint="dark" style={styles.header}>
         <View style={styles.searchRow}>
-          {/* Mascot */}
-          <Image
-            source={require('@/assets/images/devpal-mascot.png')}
-            style={styles.mascotIcon}
-            resizeMode="contain"
-          />
-          
-          {/* Search input - White background */}
+          <Pressable onPress={() => router.back()} style={styles.iconButton}>
+            <Ionicons name="arrow-back" size={24} color={GLASS.textPrimary} />
+          </Pressable>
+
+          {/* Search input - Glass */}
           <View style={styles.searchContainer}>
+            <Ionicons name="search" size={20} color={GLASS.textSecondary} style={{ marginRight: 8 }} />
             <TextInput
               placeholder="Buscar..."
-              placeholderTextColor={COLORS.textMuted}
+              placeholderTextColor={GLASS.textSecondary}
               value={searchQuery}
-              onChangeText={setSearchQuery}
+              onChangeText={(text) => {
+                setSearchQuery(text);
+                setShowDropdown(text.length > 0);
+              }}
+              onFocus={() => setShowDropdown(true)}
               style={styles.searchInput}
-              autoFocus
             />
             {searchQuery.length > 0 && (
-              <Pressable onPress={() => setSearchQuery('')}>
-                <Ionicons name="close-circle" size={18} color={COLORS.textMuted} />
+              <Pressable onPress={() => {
+                setSearchQuery('');
+                setShowDropdown(false);
+              }}>
+                <Ionicons name="close-circle" size={18} color={GLASS.textSecondary} />
               </Pressable>
             )}
           </View>
-          
+
           {/* Icons */}
-          <Pressable style={styles.iconButton}>
-            <Ionicons name="person-circle" size={28} color="white" />
-          </Pressable>
           <Pressable style={styles.iconButton} onPress={navigateToNotifications}>
-            <Ionicons name="notifications" size={24} color="white" />
+            <Ionicons name="notifications-outline" size={24} color={GLASS.textPrimary} />
           </Pressable>
         </View>
 
-        {/* Search Dropdown - Positioned relative to header */}
+        {/* Search Dropdown */}
         {showDropdown && (
           <View style={styles.dropdown}>
+            <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFill} />
             {/* Recent searches header */}
             <Text style={styles.dropdownHeader}>Búsquedas recientes</Text>
-            
+
             {/* Recent search items */}
             {RECENT_SEARCHES.map((item) => (
-              <Pressable 
-                key={item.id} 
+              <Pressable
+                key={item.id}
                 style={styles.dropdownItem}
-                onPress={() => setSearchQuery(item.title)}
+                onPress={() => {
+                  setSearchQuery(item.title);
+                  setShowDropdown(false);
+                }}
               >
                 <View style={styles.dropdownItemIcon}>
-                  <Ionicons name="time-outline" size={16} color={COLORS.textMuted} />
+                  <Ionicons name="time-outline" size={16} color={GLASS.textSecondary} />
                 </View>
                 <View>
                   <Text style={styles.dropdownItemTitle}>{item.title}</Text>
@@ -100,80 +127,97 @@ export default function SearchScreen() {
                 </View>
               </Pressable>
             ))}
-            
+
             {/* Suggestions header */}
             <Text style={styles.dropdownHeader}>Sugerencias de búsqueda</Text>
-            
+
             {/* Suggestion items */}
             {SUGGESTIONS.map((suggestion, index) => (
-              <Pressable 
-                key={index} 
+              <Pressable
+                key={index}
                 style={styles.dropdownItem}
-                onPress={() => setSearchQuery(suggestion)}
+                onPress={() => {
+                  setSearchQuery(suggestion);
+                  setShowDropdown(false);
+                }}
               >
                 <View style={styles.dropdownItemIcon}>
-                  <Ionicons name="search" size={16} color={COLORS.textMuted} />
+                  <Ionicons name="search" size={16} color={GLASS.textSecondary} />
                 </View>
                 <Text style={styles.dropdownItemTitle}>{suggestion}</Text>
               </Pressable>
             ))}
           </View>
         )}
-      </View>
-      
+      </BlurView>
+
       {/* Content */}
-      <ScrollView 
+      <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Hero Image - Below header */}
-        <View style={styles.heroSection}>
-           <Image
-            source={{ uri: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=800" }}
-            style={styles.heroImage}
-          />
-        </View>
-
         {/* Filter pills */}
-        <View style={[styles.filtersContainer, { marginTop: 20 }]}>
-          <Pressable style={[styles.filterPill, styles.filterPillActive]}>
-            <Text style={styles.filterTextActive}>Hackathons</Text>
-          </Pressable>
-          <Pressable style={styles.filterPill}>
-            <Text style={styles.filterText}>Conferencias</Text>
-          </Pressable>
-        </View>
-        
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 24, marginTop: 10 }} contentContainerStyle={{ paddingHorizontal: 20, gap: 12 }}>
+          {['Hackathon', 'Conferencia', 'Taller', 'Meetup'].map((cat) => (
+            <Pressable
+              key={cat}
+              style={[
+                styles.filterPill,
+                selectedCategory === cat && styles.filterPillActive
+              ]}
+              onPress={() => setSelectedCategory(selectedCategory === cat ? null : cat)}
+            >
+              <Text style={selectedCategory === cat ? styles.filterTextActive : styles.filterText}>
+                {cat}s
+              </Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+
         {/* Próximos eventos section */}
         <Text style={styles.sectionTitle}>
           Próximos eventos
         </Text>
-        
+
         {/* Event cards */}
-        {mockEvents.map((event) => (
-          <View key={event.id} style={styles.eventCard}>
-            <Pressable style={styles.eventCardHeader}>
-              <View style={styles.eventCardLeft}>
-                <View style={styles.eventIconContainer}>
-                  <Image
-                    source={require('@/assets/images/devpal-mascot.png')}
-                    style={styles.eventIcon}
-                    resizeMode="contain"
-                  />
-                </View>
-                <Text style={styles.eventTitle} numberOfLines={1}>
-                  {event.title}
-                </Text>
-              </View>
-              
-              <Pressable style={styles.moreInfoButton}>
-                <Text style={styles.moreInfoText}>Más información</Text>
-                <Ionicons name="chevron-down" size={16} color={COLORS.textMuted} />
-              </Pressable>
-            </Pressable>
+        {loading ? (
+          <View style={{ padding: 40, alignItems: 'center' }}>
+            <ActivityIndicator size="large" color={GLASS.accent} />
+            <Text style={{ marginTop: 12, color: GLASS.textSecondary }}>Cargando eventos...</Text>
           </View>
-        ))}
+        ) : events.length === 0 ? (
+          <View style={{ padding: 40, alignItems: 'center' }}>
+            <Text style={{ color: GLASS.textSecondary, fontSize: 16 }}>
+              No hay eventos disponibles
+            </Text>
+          </View>
+        ) : (
+          events.map((event: any) => (
+            <BlurView key={event.id} intensity={20} tint="dark" style={styles.eventCard}>
+              <Pressable
+                style={styles.eventCardHeader}
+                onPress={() => router.push(`/event/${event.id}`)}
+              >
+                <View style={styles.eventCardLeft}>
+                  <View style={styles.eventIconContainer}>
+                    <Ionicons name="calendar" size={20} color={GLASS.accent} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.eventTitle} numberOfLines={1}>
+                      {event.titulo}
+                    </Text>
+                    <Text style={styles.eventDate}>
+                      {new Date(event.fecha).toLocaleDateString()} • {event.categoria}
+                    </Text>
+                  </View>
+                </View>
+
+                <Ionicons name="chevron-forward" size={20} color={GLASS.textSecondary} />
+              </Pressable>
+            </BlurView>
+          ))
+        )}
       </ScrollView>
     </View>
   );
@@ -182,85 +226,117 @@ export default function SearchScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.white,
+    backgroundColor: '#0F172A',
+  },
+  // FONDOS DECORATIVOS
+  bgGradient: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#0F172A',
+  },
+  bgCircle1: {
+    position: 'absolute',
+    width: 300,
+    height: 300,
+    borderRadius: 150,
+    backgroundColor: '#2563EB',
+    opacity: 0.15,
+    top: -50,
+    left: -50,
+    transform: [{ scale: 1.2 }],
+  },
+  bgCircle2: {
+    position: 'absolute',
+    width: 250,
+    height: 250,
+    borderRadius: 125,
+    backgroundColor: '#22D3EE',
+    opacity: 0.1,
+    top: 100,
+    right: -80,
   },
   header: {
-    backgroundColor: COLORS.primaryBlue,
-    paddingTop: 48,
+    paddingTop: 50,
     paddingHorizontal: 16,
     paddingBottom: 16,
     zIndex: 10,
+    borderBottomWidth: 1,
+    borderColor: GLASS.border,
+    overflow: 'hidden', // Para que el blur no se salga
   },
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 12,
   },
   mascotIcon: {
-    width: 36,
-    height: 36,
+    width: 32,
+    height: 32,
   },
   searchContainer: {
     flex: 1,
-    backgroundColor: COLORS.white,
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    backgroundColor: GLASS.inputBg,
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: GLASS.border,
   },
   searchInput: {
     flex: 1,
-    fontSize: 14,
-    color: COLORS.darkBg,
+    fontSize: 16,
+    color: GLASS.textPrimary,
   },
   iconButton: {
-    padding: 4,
+    padding: 8,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 12,
   },
   dropdown: {
-    backgroundColor: COLORS.white,
-    borderRadius: 12,
+    borderRadius: 16,
     marginTop: 12,
-    padding: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 5,
+    padding: 16,
     position: 'absolute',
     top: '100%',
     left: 16,
     right: 16,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: GLASS.border,
   },
   dropdownHeader: {
-    color: COLORS.textMuted,
+    color: GLASS.textSecondary,
     fontSize: 12,
     fontWeight: '600',
     marginBottom: 8,
     marginTop: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   dropdownItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.05)',
   },
   dropdownItemIcon: {
     width: 32,
     height: 32,
-    borderRadius: 16,
-    backgroundColor: COLORS.inputGray,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.05)',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
   },
   dropdownItemTitle: {
-    color: COLORS.darkBg,
+    color: GLASS.textPrimary,
     fontSize: 14,
     fontWeight: '500',
   },
   dropdownItemSubtitle: {
-    color: COLORS.textMuted,
+    color: GLASS.textSecondary,
     fontSize: 12,
   },
   scrollView: {
@@ -269,53 +345,43 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 120,
-  },
-  heroSection: {
-    height: 160,
-    width: '100%',
-  },
-  heroImage: {
-    width: '100%',
-    height: '100%',
-  },
-  filtersContainer: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 24,
-    paddingHorizontal: 20,
+    paddingTop: 10,
   },
   filterPill: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-    backgroundColor: COLORS.white,
-    borderWidth: 2,
-    borderColor: COLORS.primaryBlue,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderWidth: 1,
+    borderColor: GLASS.border,
   },
   filterPillActive: {
-    backgroundColor: COLORS.primaryBlue,
+    backgroundColor: 'rgba(34, 211, 238, 0.15)',
+    borderColor: GLASS.accent,
   },
   filterText: {
-    fontWeight: '600',
-    color: COLORS.primaryBlue,
+    fontWeight: '500',
+    color: GLASS.textSecondary,
   },
   filterTextActive: {
     fontWeight: '600',
-    color: COLORS.white,
+    color: GLASS.accent,
   },
   sectionTitle: {
-    color: COLORS.darkBg,
+    color: GLASS.textPrimary,
     fontSize: 20,
     fontWeight: '700',
     marginBottom: 16,
     paddingHorizontal: 20,
+    marginTop: 10,
   },
   eventCard: {
-    backgroundColor: COLORS.primaryBlue,
-    borderRadius: 12,
+    borderRadius: 20,
     marginBottom: 12,
     overflow: 'hidden',
     marginHorizontal: 20,
+    borderWidth: 1,
+    borderColor: GLASS.border,
   },
   eventCardHeader: {
     flexDirection: 'row',
@@ -327,34 +393,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
+    marginRight: 10,
   },
   eventIconContainer: {
-    backgroundColor: COLORS.white,
-    borderRadius: 20,
-    padding: 6,
+    backgroundColor: 'rgba(34, 211, 238, 0.1)',
+    borderRadius: 14,
+    padding: 10,
     marginRight: 12,
-  },
-  eventIcon: {
-    width: 24,
-    height: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(34, 211, 238, 0.2)',
   },
   eventTitle: {
-    color: COLORS.white,
+    color: GLASS.textPrimary,
     fontSize: 16,
     fontWeight: '600',
-    flex: 1,
+    marginBottom: 4,
   },
-  moreInfoButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.white,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    gap: 4,
-  },
-  moreInfoText: {
-    color: COLORS.textMuted,
+  eventDate: {
+    color: GLASS.textSecondary,
     fontSize: 12,
   },
 });

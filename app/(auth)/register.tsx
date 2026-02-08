@@ -1,19 +1,22 @@
 import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  Image, 
-  Pressable, 
-  TextInput, 
-  ScrollView, 
-  KeyboardAvoidingView, 
+import {
+  View,
+  Text,
+  Image,
+  Pressable,
+  TextInput,
+  ScrollView,
+  KeyboardAvoidingView,
   Platform,
   StyleSheet,
-  Dimensions
+  Dimensions,
+  ActivityIndicator,
+  Alert
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
+import { AuthService } from '@/services/authService';
 
 const { width } = Dimensions.get('window');
 
@@ -41,22 +44,90 @@ export default function RegisterScreen() {
     confirmPassword: '',
   });
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleRegister = () => {
-    router.replace('/(onboarding)/interests');
+  const handleRegister = async () => {
+    // Validar campos vacíos
+    if (!formData.nombre.trim() || !formData.apellidos.trim() ||
+      !formData.email.trim() || !formData.password.trim() ||
+      !formData.confirmPassword.trim()) {
+      setError('Por favor completa todos los campos');
+      return;
+    }
+
+    // Validar email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setError('Por favor ingresa un correo válido');
+      return;
+    }
+
+    // Validar que las contraseñas coincidan
+    if (formData.password !== formData.confirmPassword) {
+      setError('Las contraseñas no coinciden');
+      return;
+    }
+
+    // Validar longitud de contraseña
+    if (formData.password.length < 6) {
+      setError('La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+
+    // Validar términos aceptados
+    if (!acceptedTerms) {
+      setError('Debes aceptar los términos y condiciones');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError('');
+
+      // Llamar al servicio de registro
+      const response = await AuthService.register(
+        formData.nombre.trim(),
+        formData.apellidos.trim(),
+        formData.email.trim(),
+        formData.password
+      );
+
+      // Si el registro fue exitoso, navegar al onboarding
+      if (response.user_id) {
+        router.replace('/(onboarding)/interests');
+      } else {
+        setError('Error al registrar usuario. Intenta de nuevo.');
+      }
+    } catch (err: any) {
+      console.error('Register error:', err);
+
+      // Manejar errores específicos
+      if (err.response?.status === 400) {
+        setError('El email ya está registrado');
+      } else if (err.response?.status === 500) {
+        setError('Error del servidor. Intenta más tarde.');
+      } else if (err.message?.includes('Network Error')) {
+        setError('No se pudo conectar al servidor. Verifica tu conexión.');
+      } else {
+        setError('Error al registrarse. Intenta de nuevo.');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
-      
+
       {/* Blue header with bubbles and mascot */}
       <View style={styles.header}>
         {/* Decorative bubbles */}
         <View style={styles.bubble1} />
         <View style={styles.bubble2} />
         <View style={styles.bubble3} />
-        
+
         {/* Mascot - BIGGER */}
         <Image
           source={require('@/assets/images/devpal-mascot.png')}
@@ -64,13 +135,13 @@ export default function RegisterScreen() {
           resizeMode="contain"
         />
       </View>
-      
+
       {/* White form container */}
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
-        <ScrollView 
+        <ScrollView
           style={styles.formContainer}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.formContent}
@@ -79,56 +150,56 @@ export default function RegisterScreen() {
           <Text style={styles.title}>
             Empecemos!
           </Text>
-          
+
           {/* Form inputs */}
           <View style={styles.inputsContainer}>
             <TextInput
               placeholder="Nombre(s)"
               placeholderTextColor={COLORS.textMuted}
               value={formData.nombre}
-              onChangeText={(text) => setFormData({...formData, nombre: text})}
+              onChangeText={(text) => setFormData({ ...formData, nombre: text })}
               style={styles.input}
             />
-            
+
             <TextInput
               placeholder="Apellidos"
               placeholderTextColor={COLORS.textMuted}
               value={formData.apellidos}
-              onChangeText={(text) => setFormData({...formData, apellidos: text})}
+              onChangeText={(text) => setFormData({ ...formData, apellidos: text })}
               style={styles.input}
             />
-            
+
             <TextInput
               placeholder="Correo"
               placeholderTextColor={COLORS.textMuted}
               keyboardType="email-address"
               autoCapitalize="none"
               value={formData.email}
-              onChangeText={(text) => setFormData({...formData, email: text})}
+              onChangeText={(text) => setFormData({ ...formData, email: text })}
               style={styles.input}
             />
-            
+
             <TextInput
               placeholder="Contraseña"
               placeholderTextColor={COLORS.textMuted}
               secureTextEntry
               value={formData.password}
-              onChangeText={(text) => setFormData({...formData, password: text})}
+              onChangeText={(text) => setFormData({ ...formData, password: text })}
               style={styles.input}
             />
-            
+
             <TextInput
               placeholder="Confirmar contraseña"
               placeholderTextColor={COLORS.textMuted}
               secureTextEntry
               value={formData.confirmPassword}
-              onChangeText={(text) => setFormData({...formData, confirmPassword: text})}
+              onChangeText={(text) => setFormData({ ...formData, confirmPassword: text })}
               style={styles.input}
             />
           </View>
-          
+
           {/* Terms checkbox */}
-          <Pressable 
+          <Pressable
             onPress={() => setAcceptedTerms(!acceptedTerms)}
             style={styles.termsContainer}
           >
@@ -140,9 +211,9 @@ export default function RegisterScreen() {
               <Text style={styles.termsLink}>DevPal</Text>
             </Text>
           </Pressable>
-          
+
           {/* Register button */}
-          <Pressable 
+          <Pressable
             onPress={handleRegister}
             style={styles.registerButton}
           >
@@ -150,14 +221,14 @@ export default function RegisterScreen() {
               Registrarme
             </Text>
           </Pressable>
-          
+
           {/* Divider */}
           <View style={styles.dividerContainer}>
             <View style={styles.dividerLine} />
             <Text style={styles.dividerText}>Registrarme con</Text>
             <View style={styles.dividerLine} />
           </View>
-          
+
           {/* Social buttons - BIGGER */}
           <View style={styles.socialContainer}>
             <Pressable style={styles.socialButton}>
@@ -167,7 +238,7 @@ export default function RegisterScreen() {
               <Ionicons name="logo-apple" size={28} color="#000" />
             </Pressable>
           </View>
-          
+
           {/* Login link */}
           <View style={styles.loginLinkContainer}>
             <Text style={styles.loginLinkText}>
@@ -300,6 +371,24 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  registerButtonDisabled: {
+    opacity: 0.6,
+  },
+  errorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#FEE2E2',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  errorText: {
+    flex: 1,
+    color: '#DC2626',
+    fontSize: 14,
+    fontWeight: '500',
   },
   registerButtonText: {
     color: COLORS.white,

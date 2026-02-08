@@ -11,6 +11,13 @@ interface MapViewProps {
     latitudeDelta: number;
     longitudeDelta: number;
   };
+  region?: {
+    latitude: number;
+    longitude: number;
+    latitudeDelta: number;
+    longitudeDelta: number;
+  };
+  onRegionChangeComplete?: (region: any) => void;
   children?: React.ReactNode;
 }
 
@@ -43,12 +50,7 @@ if (Platform.OS !== "web") {
 
 // Web implementation
 const WebMap = (props: MapViewProps) => {
-  // We utilize a dynamic import or ensure this code acts effectively as a no-op during SSR if needed,
-  // but for a standard Expo SPA, we can try to render the Leaflet map.
-  // Note: manipulating DOM directly in React Native Web can be tricky.
-  // We will use an iframe logic or a compatible react-leaflet wrapper if environment supports it.
-
-  // For simplicity and robustness in this swift implementation, we check if window is defined.
+  // Simple check for mounting
   const [isMounted, setIsMounted] = React.useState(false);
 
   React.useEffect(() => {
@@ -68,13 +70,11 @@ const WebMap = (props: MapViewProps) => {
     );
 
   // We require react-leaflet dynamically to avoid breaking native build
-  let MapContainer, TileLayer, Marker, Popup;
+  let MapContainer, TileLayer;
   try {
     const RL = require("react-leaflet");
     MapContainer = RL.MapContainer;
     TileLayer = RL.TileLayer;
-    // Fix leaflet icons
-    // implementation detail omitted for brevity, standard leaflet icon fix might be needed
   } catch (e) {
     return (
       <View style={[props.style, styles.fallback]}>
@@ -83,16 +83,17 @@ const WebMap = (props: MapViewProps) => {
     );
   }
 
-  // Need to extract lat/lng from initialRegion
-  const center = props.initialRegion
-    ? [props.initialRegion.latitude, props.initialRegion.longitude]
+  // Need to extract lat/lng from initialRegion or region
+  const targetRegion = props.region || props.initialRegion;
+  const center = targetRegion
+    ? [targetRegion.latitude, targetRegion.longitude]
     : [19.4326, -99.1332];
 
   const zoom = 13;
 
   return (
     <View style={props.style}>
-      {/* @ts-ignore - React Leaflet types might conflict with RN types in this hybrid file */}
+      {/* @ts-ignore */}
       <MapContainer
         center={center}
         zoom={zoom}
@@ -122,11 +123,6 @@ export const MapMarker = (props: MarkerProps & { __isWeb?: boolean }) => {
     const RL = require("react-leaflet");
     const Marker = RL.Marker;
     const Popup = RL.Popup;
-    const L = require("leaflet");
-
-    // Custom icon for web to match minimal design? For now standard.
-    // Fix default icon issue in webpack/prod
-    // const icon = L.icon({...})
 
     const position = [props.coordinate.latitude, props.coordinate.longitude];
 
@@ -137,14 +133,9 @@ export const MapMarker = (props: MarkerProps & { __isWeb?: boolean }) => {
           // @ts-ignore
           <Popup>
             <div style={{ minWidth: 100 }}>
-              {/* We can't render RN View inside Leaflet Popup easily, so we rely on text or simple HTML */}
-              {/* Or we try to portal. For now, let's keep it simple or try to render children if possible, 
-                   but usually children of Marker in RN Maps are custom views.
-                   In Leaflet, Marker children are Popups or Tooltips.
-                   We will use a DivIcon if we want custom markers, but that's complex.
-                   Lets stick to standard marker + Popup for custom content if provided, 
-                   BUT the current app usage puts a VIEW inside the marker for custom styling.
-               */}
+              {/* Simplified popup content */}
+              {props.title && <strong>{props.title}</strong>}
+              {props.description && <p>{props.description}</p>}
             </div>
           </Popup>
         ) : null}
@@ -165,7 +156,7 @@ export const MapMarker = (props: MarkerProps & { __isWeb?: boolean }) => {
 };
 
 // Main Component
-export default function MapView(props: MapViewProps) {
+const MapView = React.forwardRef((props: MapViewProps, ref: any) => {
   if (Platform.OS === "web") {
     return <WebMap {...props} />;
   }
@@ -183,14 +174,19 @@ export default function MapView(props: MapViewProps) {
 
   return (
     <NativeMap
+      ref={ref}
       style={props.style}
       provider={PROVIDER_GOOGLE}
       initialRegion={props.initialRegion}
+      region={props.region}
+      onRegionChangeComplete={props.onRegionChangeComplete}
     >
       {props.children}
     </NativeMap>
   );
-}
+});
+
+export default MapView;
 
 const styles = StyleSheet.create({
   fallback: {

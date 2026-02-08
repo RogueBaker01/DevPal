@@ -1,31 +1,77 @@
-import React, { useState } from "react";
-import { View, Text, Pressable, StyleSheet, Image, Modal } from "react-native";
+import React, { useState, useEffect, useRef } from "react";
+import { View, Text, Pressable, StyleSheet, Image, Modal, ActivityIndicator } from "react-native";
 import { StatusBar } from "expo-status-bar";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import MapView, { MapMarker } from "@/components/MapView";
+import { EventsService } from "@/services/eventsService";
+import { BlurView } from "expo-blur";
 
-// Design tokens
-const COLORS = {
-  darkBg: '#0F172A',
-  primaryBlue: '#2563EB',
-  accentCyan: '#22D3EE',
-  white: '#FFFFFF',
-  textMuted: '#64748B',
-  mapGreen: '#E8F4E8',
+// New Glass Tokens
+const GLASS = {
+  bg: 'rgba(30, 41, 59, 0.7)',
+  border: 'rgba(255, 255, 255, 0.1)',
+  textPrimary: '#F8FAFC',
+  textSecondary: '#94A3B8',
+  accent: '#22D3EE',
+  inputBg: 'rgba(15, 23, 42, 0.6)',
 };
 
-// Map pins
-const MAP_PINS = [
-  { id: '1', title: 'Hackathon Nacional 2024', x: 0.25, y: 0.35, date: '10 Feb', location: 'Centro de Convenciones' },
-  { id: '2', title: 'Conferencia DevOps', x: 0.65, y: 0.30, date: '2 Feb', location: 'Auditorio Principal' },
-  { id: '3', title: 'Taller React Native', x: 0.40, y: 0.55, date: '28 Ene', location: 'Startup Campus' },
-  { id: '4', title: 'Feria Tecnológica', x: 0.75, y: 0.60, date: '15 Feb', location: 'Plaza Mayor' },
-];
+// Default region
+const DEFAULT_REGION = {
+  latitude: 20.5888,
+  longitude: -100.3899,
+  latitudeDelta: 0.0922,
+  longitudeDelta: 0.0421,
+};
 
 export default function MapScreen() {
   const router = useRouter();
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const mapRef = useRef<any>(null);
   const [selectedPin, setSelectedPin] = useState<string | null>(null);
   const [showAccountMenu, setShowAccountMenu] = useState(false);
+  const [events, setEvents] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadEvents();
+  }, []);
+
+  // Effect to handle deep linking or initial selection
+  useEffect(() => {
+    if (id && events.length > 0) {
+      const targetEvent = events.find(e => e.id === id);
+      if (targetEvent) {
+        setSelectedPin(id);
+        const newRegion = {
+          latitude: parseFloat(targetEvent.latitud),
+          longitude: parseFloat(targetEvent.longitud),
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        };
+        mapRef.current?.animateToRegion(newRegion, 1000);
+      }
+    }
+  }, [id, events]);
+
+  const loadEvents = async () => {
+    try {
+      setLoading(true);
+      const data = await EventsService.getAll(undefined, 100);
+      // Filter events that have valid coordinates
+      const mapEvents = data.filter((e: any) =>
+        e.latitud && e.longitud &&
+        !isNaN(parseFloat(e.latitud)) && !isNaN(parseFloat(e.longitud)) &&
+        parseFloat(e.latitud) !== 0 && parseFloat(e.longitud) !== 0
+      );
+      setEvents(mapEvents);
+    } catch (error) {
+      console.error("Error loading map events:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const navigateToSearch = () => router.push('/search');
   const navigateToNotifications = () => router.push('/notifications');
@@ -38,100 +84,104 @@ export default function MapScreen() {
     router.replace('/(auth)/welcome');
   };
 
-  const selectedEvent = MAP_PINS.find(p => p.id === selectedPin);
+  const selectedEvent = events.find(e => e.id === selectedPin);
 
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
-      
-      {/* SOLID BLUE Header */}
-      <View style={styles.header}>
+
+      {/* Floating Glass Header */}
+      <BlurView intensity={30} tint="dark" style={styles.headerGlass}>
         <View style={styles.searchRow}>
           <Image
             source={require('@/assets/images/devpal-mascot.png')}
             style={styles.mascotIcon}
             resizeMode="contain"
           />
-          
+
           <Pressable style={styles.searchContainer} onPress={navigateToSearch}>
-            <Text style={styles.searchText}>Buscar</Text>
-            <Ionicons name="search" size={18} color={COLORS.primaryBlue} />
+            <Text style={styles.searchText}>Buscar e.g. "React"</Text>
+            <Ionicons name="search" size={18} color={GLASS.textSecondary} />
           </Pressable>
-          
+
           <Pressable style={styles.iconButton} onPress={() => setShowAccountMenu(true)}>
-            <Ionicons name="person-circle" size={28} color="white" />
+            <Ionicons name="person-circle-outline" size={28} color={GLASS.textPrimary} />
           </Pressable>
-          
+
           <Pressable style={styles.iconButton} onPress={navigateToNotifications}>
-            <Ionicons name="notifications" size={24} color="white" />
+            <Ionicons name="notifications-outline" size={24} color={GLASS.textPrimary} />
           </Pressable>
         </View>
-      </View>
-      
+      </BlurView>
+
       {/* Map area */}
       <View style={styles.mapContainer}>
-        <View style={styles.mapBackground}>
-          {/* Roads */}
-          <View style={[styles.road, styles.roadH1]} />
-          <View style={[styles.road, styles.roadH2]} />
-          <View style={[styles.road, styles.roadH3]} />
-          <View style={[styles.road, styles.roadV1]} />
-          <View style={[styles.road, styles.roadV2]} />
-          <View style={[styles.road, styles.roadV3]} />
-          
-          {/* Pins */}
-          {MAP_PINS.map((pin) => (
-            <Pressable
-              key={pin.id}
-              style={[
-                styles.pinWrapper,
-                { left: `${pin.x * 100}%`, top: `${pin.y * 100}%` }
-              ]}
-              onPress={() => setSelectedPin(pin.id)}
-            >
-              <View style={[
-                styles.pin,
-                selectedPin === pin.id && styles.pinSelected
-              ]}>
-                <Ionicons name="location" size={20} color="white" />
-              </View>
-            </Pressable>
-          ))}
-        </View>
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={GLASS.accent} />
+            <Text style={styles.loadingText}>Cargando mapa...</Text>
+          </View>
+        ) : (
+          <MapView
+            ref={mapRef}
+            style={styles.map}
+            initialRegion={DEFAULT_REGION}
+          // Optional: Use a dark map style JSON here if available
+          >
+            {events.map((event) => (
+              <MapMarker
+                key={event.id}
+                coordinate={{
+                  latitude: parseFloat(event.latitud),
+                  longitude: parseFloat(event.longitud),
+                }}
+                onPress={() => setSelectedPin(event.id)}
+              >
+                <View style={[
+                  styles.pin,
+                  selectedPin === event.id && styles.pinSelected
+                ]}>
+                  {getCategoryIcon(event.categoria)}
+                </View>
+              </MapMarker>
+            ))}
+          </MapView>
+        )}
       </View>
-      
-      {/* Event modal */}
+
+      {/* Event Modal (Bottom Sheet Style) */}
       {selectedEvent && (
-        <View style={styles.eventModal}>
+        <BlurView intensity={80} tint="dark" style={styles.eventModal}>
           <View style={styles.eventModalContent}>
             <Image
-              source={{ uri: `https://picsum.photos/seed/${selectedEvent.id}/300/150` }}
+              source={selectedEvent.imagen_url ? { uri: selectedEvent.imagen_url } : { uri: `https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=100` }}
               style={styles.eventImage}
             />
             <View style={styles.eventInfo}>
-              <Text style={styles.eventTitle}>{selectedEvent.title}</Text>
+              <Text style={styles.eventTitle} numberOfLines={1}>{selectedEvent.titulo}</Text>
               <View style={styles.eventMeta}>
-                <Ionicons name="calendar-outline" size={14} color={COLORS.primaryBlue} />
-                <Text style={styles.eventMetaText}>{selectedEvent.date}</Text>
+                <Ionicons name="calendar-outline" size={14} color={GLASS.accent} />
+                <Text style={styles.eventMetaText}>{new Date(selectedEvent.fecha).toLocaleDateString()}</Text>
               </View>
               <View style={styles.eventMeta}>
-                <Ionicons name="location-outline" size={14} color={COLORS.textMuted} />
-                <Text style={styles.eventMetaText}>{selectedEvent.location}</Text>
+                <Ionicons name="location-outline" size={14} color={GLASS.textSecondary} />
+                <Text style={styles.eventMetaText} numberOfLines={1}>{selectedEvent.ubicacion}</Text>
               </View>
             </View>
             <Pressable style={styles.closeButton} onPress={() => setSelectedPin(null)}>
-              <Ionicons name="close" size={20} color={COLORS.textMuted} />
+              <Ionicons name="close-circle" size={24} color={GLASS.textSecondary} />
             </Pressable>
           </View>
-          <Pressable 
+          <Pressable
             style={styles.actionButton}
             onPress={() => router.push(`/event/${selectedEvent.id}`)}
           >
-            <Text style={styles.actionButtonText}>Página Oficial</Text>
+            <Text style={styles.actionButtonText}>Ver Detalles</Text>
+            <Ionicons name="arrow-forward" size={16} color="#0F172A" />
           </Pressable>
-        </View>
+        </BlurView>
       )}
-      
+
       {/* Account Dropdown Modal */}
       <Modal
         visible={showAccountMenu}
@@ -139,13 +189,13 @@ export default function MapScreen() {
         animationType="fade"
         onRequestClose={() => setShowAccountMenu(false)}
       >
-        <Pressable 
+        <Pressable
           style={styles.modalOverlay}
           onPress={() => setShowAccountMenu(false)}
         >
-          <View style={styles.accountDropdown}>
+          <BlurView intensity={50} tint="dark" style={styles.accountDropdown}>
             <Pressable style={styles.dropdownItem} onPress={navigateToSettings}>
-              <Ionicons name="settings-outline" size={20} color={COLORS.darkBg} />
+              <Ionicons name="settings-outline" size={20} color={GLASS.textPrimary} />
               <Text style={styles.dropdownItemText}>Configuración</Text>
             </Pressable>
             <View style={styles.dropdownDivider} />
@@ -153,23 +203,45 @@ export default function MapScreen() {
               <Ionicons name="log-out-outline" size={20} color="#EF4444" />
               <Text style={[styles.dropdownItemText, { color: '#EF4444' }]}>Cerrar sesión</Text>
             </Pressable>
-          </View>
+          </BlurView>
         </Pressable>
       </Modal>
     </View>
   );
 }
 
+function getCategoryIcon(category: string) {
+  let iconName: any = "location";
+
+  switch (category?.toLowerCase()) {
+    case 'hackathon': iconName = "code-slash"; break;
+    case 'conferencia': iconName = "mic"; break;
+    case 'taller': iconName = "hammer"; break;
+    case 'meetup': iconName = "people"; break;
+    case 'concurso': iconName = "trophy"; break;
+  }
+
+  return <Ionicons name={iconName} size={16} color="#FFF" />;
+}
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.mapGreen,
+    backgroundColor: '#0F172A',
   },
-  header: {
-    backgroundColor: COLORS.primaryBlue,
-    paddingTop: 48,
-    paddingHorizontal: 16,
-    paddingBottom: 16,
+  // FLOATING HEADER
+  headerGlass: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    right: 20,
+    borderRadius: 25,
+    overflow: 'hidden',
+    padding: 10,
+    zIndex: 100,
+    borderWidth: 1,
+    borderColor: GLASS.border,
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
   },
   searchRow: {
     flexDirection: 'row',
@@ -177,100 +249,102 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   mascotIcon: {
-    width: 36,
-    height: 36,
+    width: 32,
+    height: 32,
   },
   searchContainer: {
     flex: 1,
-    backgroundColor: COLORS.white,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 20,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
   searchText: {
-    color: COLORS.textMuted,
+    color: GLASS.textSecondary,
     fontSize: 14,
   },
   iconButton: {
-    padding: 4,
+    padding: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 20,
   },
+  // MAP
   mapContainer: {
     flex: 1,
+    backgroundColor: '#0F172A',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  mapBackground: {
-    flex: 1,
-    backgroundColor: COLORS.mapGreen,
-    position: 'relative',
+  map: {
+    width: '100%',
+    height: '100%',
   },
-  road: {
-    position: 'absolute',
-    backgroundColor: COLORS.white,
+  loadingContainer: {
+    alignItems: 'center',
   },
-  roadH1: { left: 0, right: 0, top: '25%', height: 10 },
-  roadH2: { left: 0, right: 0, top: '50%', height: 14 },
-  roadH3: { left: 0, right: 0, top: '75%', height: 8 },
-  roadV1: { top: 0, bottom: 0, left: '20%', width: 8 },
-  roadV2: { top: 0, bottom: 0, left: '50%', width: 12 },
-  roadV3: { top: 0, bottom: 0, left: '80%', width: 6 },
-  pinWrapper: {
-    position: 'absolute',
-    transform: [{ translateX: -16 }, { translateY: -32 }],
+  loadingText: {
+    marginTop: 10,
+    color: GLASS.textSecondary,
   },
+  // PINS
   pin: {
-    backgroundColor: COLORS.primaryBlue,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    backgroundColor: GLASS.accent,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: COLORS.white,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 5,
+    borderWidth: 3,
+    borderColor: 'rgba(255,255,255,0.3)',
+    shadowColor: GLASS.accent,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 8,
   },
   pinSelected: {
-    backgroundColor: COLORS.accentCyan,
-    transform: [{ scale: 1.2 }],
+    backgroundColor: '#F59E0B', // Amber for selection
+    transform: [{ scale: 1.25 }],
+    zIndex: 10,
+    borderColor: '#FFF',
   },
+  // EVENT MODAL
   eventModal: {
     position: 'absolute',
-    bottom: 100,
-    left: 16,
-    right: 16,
-    backgroundColor: COLORS.white,
-    borderRadius: 16,
+    bottom: 110, // Above tab bar
+    left: 20,
+    right: 20,
+    borderRadius: 24,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 10,
+    borderWidth: 1,
+    borderColor: GLASS.border,
+    padding: 4, // Padding for inner content
   },
   eventModalContent: {
     flexDirection: 'row',
-    padding: 12,
+    padding: 16,
+    alignItems: 'center',
   },
   eventImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 8,
+    width: 70,
+    height: 70,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: GLASS.border,
+    backgroundColor: '#1E293B',
   },
   eventInfo: {
     flex: 1,
-    marginLeft: 12,
+    marginLeft: 14,
     justifyContent: 'center',
   },
   eventTitle: {
-    color: COLORS.darkBg,
+    color: GLASS.textPrimary,
     fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 4,
+    fontWeight: 'bold',
+    marginBottom: 6,
   },
   eventMeta: {
     flexDirection: 'row',
@@ -279,40 +353,45 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   eventMetaText: {
-    color: COLORS.textMuted,
+    color: GLASS.textSecondary,
     fontSize: 12,
   },
   closeButton: {
-    padding: 8,
+    padding: 4,
+    alignSelf: 'flex-start',
   },
   actionButton: {
-    backgroundColor: COLORS.primaryBlue,
-    padding: 14,
+    backgroundColor: GLASS.accent,
+    padding: 12,
+    marginHorizontal: 16,
+    marginBottom: 16,
+    borderRadius: 16,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
   },
   actionButtonText: {
-    color: COLORS.white,
-    fontSize: 16,
-    fontWeight: '700',
+    color: '#0F172A',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
+  // DROPDOWN
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.3)',
     justifyContent: 'flex-start',
     alignItems: 'flex-end',
     paddingTop: 100,
-    paddingRight: 16,
+    paddingRight: 20,
   },
   accountDropdown: {
-    backgroundColor: COLORS.white,
-    borderRadius: 12,
-    paddingVertical: 8,
+    backgroundColor: 'rgba(15, 23, 42, 0.9)',
+    borderRadius: 16,
+    padding: 8,
     minWidth: 180,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 10,
+    borderWidth: 1,
+    borderColor: GLASS.border,
+    overflow: 'hidden',
   },
   dropdownItem: {
     flexDirection: 'row',
@@ -322,12 +401,12 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   dropdownItemText: {
-    fontSize: 16,
-    color: COLORS.darkBg,
+    fontSize: 14,
+    color: GLASS.textPrimary,
   },
   dropdownDivider: {
     height: 1,
-    backgroundColor: '#F1F5F9',
-    marginHorizontal: 16,
+    backgroundColor: GLASS.border,
+    marginVertical: 4,
   },
 });

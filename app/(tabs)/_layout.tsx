@@ -1,136 +1,168 @@
-import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import React from "react";
-import { View, Image, StyleSheet, Text } from "react-native";
+import { View, Image, StyleSheet, Platform } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { BlurView } from "expo-blur";
 
 // Design tokens
 const COLORS = {
-  darkBg: '#0F172A',
-  primaryBlue: '#2563EB',
-  accentCyan: '#22D3EE',
-  textMuted: '#64748B',
-  white: '#FFFFFF',
+  activeTint: '#22D3EE',    // Cian Eléctrico Brillante
+  inactiveTint: '#94A3B8',  // Gris neutro
+  dotColor: '#22D3EE',
 };
 
 /**
- * Tab Layout - Floating dark blue tab bar
- * Based on Figma: Rounded pill navigation with 4 tabs
+ * Tab Layout - Floating Glassmorphism
+ * Uses expo-blur for real-time backdrop blur.
  */
 export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: COLORS.accentCyan,
-        tabBarInactiveTintColor: COLORS.textMuted,
+        tabBarShowLabel: false,
+        tabBarActiveTintColor: COLORS.activeTint,
+        tabBarInactiveTintColor: COLORS.inactiveTint,
         tabBarStyle: {
-          backgroundColor: COLORS.darkBg,
-          borderRadius: 28,
-          marginHorizontal: 16,
-          marginBottom: 24,
-          height: 60,
-          paddingBottom: 8,
-          paddingTop: 8,
           position: "absolute",
+          bottom: 25,
+          left: 20,
+          right: 20,
+          height: 70,
+          borderRadius: 35,
           borderTopWidth: 0,
-          elevation: 10,
+          elevation: 0,
+          backgroundColor: 'transparent',
           shadowColor: "#000",
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.3,
+          shadowOffset: { width: 0, height: 10 },
+          shadowOpacity: 0.25,
           shadowRadius: 10,
         },
         tabBarItemStyle: {
-          paddingVertical: 4,
+          height: 70,
+          padding: 0,
+          // Eliminamos cualquier padding/margin default
         },
-        tabBarLabelStyle: {
-          fontSize: 10,
-          fontWeight: "600",
-        },
+        // Integración de Glassmorphism
+        tabBarBackground: () => (
+          <BlurView
+            intensity={80}
+            tint="dark"
+            style={{
+              ...StyleSheet.absoluteFillObject,
+              borderRadius: 35,
+              overflow: 'hidden',
+              backgroundColor: 'rgba(20, 20, 30, 0.6)',
+            }}
+          />
+        ),
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
           title: "Home",
-          tabBarIcon: ({ color, focused }) => (
-            <View style={focused ? styles.activeIconBg : undefined}>
-              <Image
-                source={require("@/assets/images/devpal-mascot.png")}
-                style={styles.mascotIcon}
-                resizeMode="contain"
-              />
+          tabBarIcon: ({ focused }) => (
+            <View style={styles.iconContainer}>
+              <View style={styles.iconWrapper}>
+                <Image
+                  source={require("@/assets/images/devpal-mascot.png")}
+                  style={[
+                    styles.mascotIcon,
+                    { opacity: focused ? 1 : 0.5 }
+                  ]}
+                  resizeMode="contain"
+                />
+              </View>
+              {focused && <View style={styles.activeDot} />}
             </View>
           ),
         }}
       />
+
       <Tabs.Screen
         name="saved"
         options={{
           title: "Favoritos",
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons 
-              name={focused ? "star" : "star-outline"} 
-              size={22} 
-              color={color} 
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="map"
-        options={{
-          title: "Mapa",
-          tabBarIcon: ({ color, focused }) => (
-            <View style={styles.mapIconContainer}>
-              <View style={[styles.mapStripe, { backgroundColor: color }]} />
-              <View style={[styles.mapStripe, { backgroundColor: color }]} />
-              <View style={[styles.mapStripe, { backgroundColor: color }]} />
+          tabBarIcon: ({ focused, color }) => (
+            <View style={styles.iconContainer}>
+              <Ionicons
+                name={focused ? "star" : "star-outline"}
+                size={30}
+                color={color}
+              />
+              {focused && <View style={styles.activeDot} />}
             </View>
           ),
         }}
       />
+
+      <Tabs.Screen
+        name="map"
+        options={{
+          title: "Mapa",
+          tabBarIcon: ({ focused, color }) => (
+            <View style={styles.iconContainer}>
+              <Ionicons
+                name={focused ? "map" : "map-outline"}
+                size={30}
+                color={color}
+              />
+              {focused && <View style={styles.activeDot} />}
+            </View>
+          ),
+        }}
+      />
+
       <Tabs.Screen
         name="profile"
         options={{
           title: "Portafolio",
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons 
-              name={focused ? "document-text" : "document-text-outline"} 
-              size={22} 
-              color={color} 
-            />
+          tabBarIcon: ({ focused, color }) => (
+            <View style={styles.iconContainer}>
+              <Ionicons
+                name={focused ? "person" : "person-outline"}
+                size={30}
+                color={color}
+              />
+              {focused && <View style={styles.activeDot} />}
+            </View>
           ),
         }}
       />
+
       {/* Hidden screens */}
-      <Tabs.Screen
-        name="chat"
-        options={{
-          href: null,
-        }}
-      />
+      <Tabs.Screen name="chat" options={{ href: null }} />
     </Tabs>
   );
 }
 
 const styles = StyleSheet.create({
+  iconContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 70, // Altura completa del tab bar
+    width: 60,
+    top: 14, // Damos un offset consistente hacia abajo para centrar visualmente
+  },
+  iconWrapper: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   mascotIcon: {
-    width: 28,
-    height: 28,
+    width: 32, // Mascota ligeramente más grande
+    height: 32,
   },
-  activeIconBg: {
-    backgroundColor: COLORS.primaryBlue,
-    borderRadius: 16,
-    padding: 4,
-  },
-  mapIconContainer: {
-    width: 22,
-    height: 22,
-    justifyContent: 'space-between',
-  },
-  mapStripe: {
-    width: '100%',
-    height: 5,
+  activeDot: {
+    position: 'absolute',
+    bottom: -6, // Ajuste negativo relativo al container desplazado para mantener proporción
+    width: 4,
+    height: 4,
     borderRadius: 2,
+    backgroundColor: COLORS.dotColor,
+    shadowColor: COLORS.dotColor,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 6,
   },
 });

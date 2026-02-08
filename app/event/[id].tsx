@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
-import { View, Text, Image, Pressable, ScrollView, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, Image, Pressable, ScrollView, StyleSheet, ActivityIndicator, Linking, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
-import { mockEvents } from '@/constants/MockData';
+import { EventsService } from '@/services/eventsService';
 
 // Design tokens
 const COLORS = {
@@ -15,132 +15,206 @@ const COLORS = {
   textMuted: '#64748B',
 };
 
-/**
- * Event Details Screen (Información)
- * Based on Figma: Full event details with image, info, and action buttons
- */
 export default function EventScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [isSaved, setIsSaved] = useState(false);
+  const [event, setEvent] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Find event by id or use first event
-  const event = mockEvents.find(e => e.id === id) || mockEvents[0];
+  useEffect(() => {
+    if (id) {
+      loadEventDetails();
+      checkSavedStatus();
+    }
+  }, [id]);
+
+  const checkSavedStatus = async () => {
+    try {
+      // Basic check: get all saved events and find this one
+      // Optimization: create specific endpoint later
+      const savedEvents = await EventsService.getSaved();
+      const isSavedEvent = savedEvents.some((e: any) => e.id === id);
+      setIsSaved(isSavedEvent);
+    } catch (error) {
+      console.log('Error checking saved status', error);
+    }
+  };
+
+  const loadEventDetails = async () => {
+    try {
+      setLoading(true);
+      const data = await EventsService.getDetail(id);
+      setEvent(data);
+    } catch (error) {
+      console.error('Error loading event details:', error);
+      Alert.alert('Error', 'No se pudo cargar la información del evento.');
+      router.back();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleSave = async () => {
+    try {
+      if (isSaved) {
+        await EventsService.unsave(event.id);
+        setIsSaved(false);
+        // Alert.alert('Eliminado', 'Evento eliminado de favoritos');
+      } else {
+        await EventsService.save(event.id);
+        setIsSaved(true);
+        Alert.alert('Guardado', 'Evento agregado a favoritos');
+      }
+    } catch (error) {
+      console.error('Error toggling save:', error);
+      Alert.alert('Error', 'No se pudo actualizar favoritos');
+    }
+  };
+
+  const handleOpenURL = () => {
+    if (event?.url_externa) {
+      Linking.openURL(event.url_externa).catch(err =>
+        Alert.alert('Error', 'No se pudo abrir el enlace.')
+      );
+    } else {
+      Alert.alert('Aviso', 'Este evento no tiene un sitio web oficial registrado.');
+    }
+  };
+
+  const handleShare = async () => {
+    Alert.alert('Compartir', 'Funcionalidad de compartir próximamente.');
+  };
+
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={COLORS.primaryBlue} />
+      </View>
+    );
+  }
+
+  if (!event) return null;
 
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
-      
+
       {/* Hero image with overlay header */}
       <View style={styles.heroContainer}>
         <Image
-          source={{ uri: `https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800` }}
+          source={event.imagen_url ? { uri: event.imagen_url } : { uri: `https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800` }}
           style={styles.heroImage}
         />
-        
+
         {/* Gradient overlay */}
         <View style={styles.heroOverlay} />
-        
+
         {/* Header buttons */}
         <View style={styles.headerButtons}>
-          <Pressable 
+          <Pressable
             onPress={() => router.back()}
             style={styles.headerButton}
           >
             <Ionicons name="arrow-back" size={24} color="white" />
           </Pressable>
-          
-          <Pressable 
-            onPress={() => setIsSaved(!isSaved)}
+
+          <Pressable
+            onPress={toggleSave}
             style={styles.headerButton}
           >
-            <Ionicons 
-              name={isSaved ? "heart" : "heart-outline"} 
-              size={24} 
-              color={isSaved ? "#EF4444" : "white"} 
+            <Ionicons
+              name={isSaved ? "heart" : "heart-outline"}
+              size={24}
+              color={isSaved ? "#EF4444" : "white"}
             />
           </Pressable>
         </View>
-        
+
         {/* Category badges */}
         <View style={styles.badgesContainer}>
           <View style={styles.badge}>
-            <Text style={styles.badgeText}>Hackathons</Text>
-          </View>
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>Conferencias</Text>
+            <Text style={styles.badgeText}>{event.categoria}</Text>
           </View>
         </View>
       </View>
-      
+
       {/* Content */}
-      <ScrollView 
+      <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         {/* Title section */}
         <Text style={styles.title}>
-          Próximos eventos
+          Detalles del Evento
         </Text>
-        
+
         {/* Event card */}
         <View style={styles.eventCard}>
           <Text style={styles.eventTitle}>
-            {event.title}
+            {event.titulo}
           </Text>
-          
+
           <View style={styles.eventMeta}>
             <Ionicons name="calendar-outline" size={18} color={COLORS.primaryBlue} />
             <Text style={styles.eventMetaText}>
-              {event.date}
+              {event.fecha}
             </Text>
           </View>
-          
+
           <View style={styles.eventMeta}>
             <Ionicons name="time-outline" size={18} color={COLORS.primaryBlue} />
             <Text style={styles.eventMetaText}>
-              {event.time}
+              {event.hora}
             </Text>
           </View>
-          
+
           <View style={styles.eventMeta}>
             <Ionicons name="location-outline" size={18} color={COLORS.primaryBlue} />
             <Text style={styles.eventMetaText}>
-              {event.location}
+              {event.ubicacion || 'Ubicación por confirmar'}
             </Text>
           </View>
         </View>
-        
+
         {/* Description */}
         <View style={styles.descriptionCard}>
           <Text style={styles.descriptionTitle}>
             Descripción
           </Text>
           <Text style={styles.descriptionText}>
-            Únete a este increíble evento donde podrás conectar con otros desarrolladores, 
-            aprender nuevas tecnologías y competir por premios increíbles. 
-            No te pierdas esta oportunidad única de crecer profesionalmente.
+            {event.descripcion || 'Sin descripción disponible.'}
           </Text>
         </View>
-        
-        {/* Map preview */}
-        <View style={styles.mapCard}>
-          <View style={styles.mapPreview}>
-            <Ionicons name="map" size={32} color={COLORS.primaryBlue} />
-            <Text style={styles.mapText}>Ver ubicación</Text>
-          </View>
-        </View>
+
+        {/* Map preview - Sólo si tiene coordenadas y no es Online */}
+        {event.latitud && event.longitud &&
+          parseFloat(event.latitud) !== 0 && parseFloat(event.longitud) !== 0 &&
+          event.ubicacion?.toLowerCase() !== 'online' && (
+            <Pressable
+              style={styles.mapCard}
+              onPress={() => router.push({ pathname: '/(tabs)/map', params: { id: event.id } })}
+            >
+              <View style={styles.mapPreview}>
+                <Ionicons name="map" size={32} color={COLORS.primaryBlue} />
+                <Text style={styles.mapText}>Ver ubicación en mapa</Text>
+              </View>
+            </Pressable>
+          )}
       </ScrollView>
-      
+
       {/* Bottom action bar */}
       <View style={styles.bottomBar}>
-        <Pressable style={styles.secondaryButton}>
+        <Pressable style={styles.secondaryButton} onPress={handleShare}>
           <Ionicons name="share-outline" size={20} color={COLORS.primaryBlue} />
           <Text style={styles.secondaryButtonText}>Compartir</Text>
         </Pressable>
-        
-        <Pressable style={styles.primaryButton}>
+
+        <Pressable
+          style={[styles.primaryButton, !event.url_externa && { backgroundColor: COLORS.textMuted }]}
+          onPress={handleOpenURL}
+        >
           <Text style={styles.primaryButtonText}>Página Oficial</Text>
         </Pressable>
       </View>

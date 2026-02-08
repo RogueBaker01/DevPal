@@ -1,30 +1,46 @@
 import React, { useState } from "react";
-import { View, Text, ScrollView, Pressable, StyleSheet, Image, Modal } from "react-native";
+import { View, Text, ScrollView, Pressable, StyleSheet, Image, Modal, ActivityIndicator } from "react-native";
 import { StatusBar } from "expo-status-bar";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { EventsService } from '@/services/eventsService';
+import { BlurView } from "expo-blur";
+import { ActiveHeader } from "@/app/components/ActiveHeader";
 
-// Design tokens
-const COLORS = {
-  darkBg: '#0F172A',
-  primaryBlue: '#2563EB',
-  accentCyan: '#22D3EE',
-  white: '#FFFFFF',
-  inputGray: '#F1F5F9',
-  textMuted: '#64748B',
+// New Glass Tokens
+const GLASS = {
+  bg: 'rgba(30, 41, 59, 0.7)',
+  border: 'rgba(255, 255, 255, 0.1)',
+  textPrimary: '#F8FAFC',
+  textSecondary: '#94A3B8',
+  accent: '#22D3EE',
+  inputBg: 'rgba(15, 23, 42, 0.6)',
 };
-
-// Saved events
-const SAVED_EVENTS = [
-  { id: '1', title: 'Hackathon Nacional 2024', date: '10 Feb', location: 'Centro de Convenciones', time: '9:00 AM' },
-  { id: '2', title: 'Conferencia DevOps México', date: '2 Feb', location: 'Auditorio Principal', time: '10:00 AM' },
-  { id: '3', title: 'Taller React Native', date: '28 Ene', location: 'Startup Campus', time: '2:00 PM' },
-];
 
 export default function SavedScreen() {
   const router = useRouter();
   const [expandedEvent, setExpandedEvent] = useState<string | null>(null);
   const [showAccountMenu, setShowAccountMenu] = useState(false);
+  const [events, setEvents] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      loadSavedEvents();
+    }, [])
+  );
+
+  const loadSavedEvents = async () => {
+    try {
+      setLoading(true);
+      const data = await EventsService.getSaved();
+      setEvents(data);
+    } catch (error) {
+      console.error('Error loading saved events:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const navigateToSearch = () => router.push('/search');
   const navigateToNotifications = () => router.push('/notifications');
@@ -40,108 +56,94 @@ export default function SavedScreen() {
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
-      
-      {/* SOLID BLUE Header */}
-      <View style={styles.header}>
-        <View style={styles.searchRow}>
-          <Image
-            source={require('@/assets/images/devpal-mascot.png')}
-            style={styles.mascotIcon}
-            resizeMode="contain"
-          />
-          
-          <Pressable style={styles.searchContainer} onPress={navigateToSearch}>
-            <Text style={styles.searchText}>Buscar</Text>
-            <Ionicons name="search" size={18} color={COLORS.primaryBlue} />
-          </Pressable>
-          
-          <Pressable style={styles.iconButton} onPress={() => setShowAccountMenu(true)}>
-            <Ionicons name="person-circle" size={28} color="white" />
-          </Pressable>
-          
-          <Pressable style={styles.iconButton} onPress={navigateToNotifications}>
-            <Ionicons name="notifications" size={24} color="white" />
-          </Pressable>
-        </View>
-      </View>
-      
+
+      {/* Decorative Background */}
+      <View style={styles.bgGradient} />
+      <View style={styles.bgCircle1} />
+      <View style={styles.bgCircle2} />
+
+      {/* Floating Glass Header */}
+      <ActiveHeader
+        onAccountPress={() => setShowAccountMenu(true)}
+      />
+
       {/* Content */}
-      <ScrollView 
+      <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Filter pills */}
-        <View style={styles.filtersContainer}>
-          <Pressable style={[styles.filterPill, styles.filterPillActive]}>
-            <Text style={styles.filterTextActive}>Hackathons</Text>
-          </Pressable>
-          <Pressable style={styles.filterPill}>
-            <Text style={styles.filterText}>Conferencias</Text>
-          </Pressable>
-        </View>
-        
-        <Text style={styles.sectionTitle}>Próximos eventos</Text>
-        
-        {/* Event cards with dropdowns */}
-        {SAVED_EVENTS.map((event) => {
-          const isExpanded = expandedEvent === event.id;
-          return (
-            <View key={event.id} style={styles.eventCard}>
-              <View style={styles.eventCardHeader}>
-                <View style={styles.eventCardLeft}>
-                  <View style={styles.eventIconContainer}>
-                    <Image
-                      source={require('@/assets/images/devpal-mascot.png')}
-                      style={styles.eventIcon}
-                      resizeMode="contain"
-                    />
+        <Text style={styles.sectionTitle}>Eventos Guardados</Text>
+
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={GLASS.accent} />
+            <Text style={styles.loadingText}>Cargando favoritos...</Text>
+          </View>
+        ) : events.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Ionicons name="bookmark-outline" size={48} color={GLASS.textSecondary} />
+            <Text style={styles.emptyText}>
+              No tienes eventos guardados aún.
+            </Text>
+          </View>
+        ) : (
+          events.map((event) => {
+            const isExpanded = expandedEvent === event.id;
+            return (
+              <View key={event.id} style={styles.eventCard}>
+                <View style={styles.eventCardHeader}>
+                  <View style={styles.eventCardLeft}>
+                    <View style={styles.eventIconContainer}>
+                      <Ionicons name="bookmark" size={20} color={GLASS.accent} />
+                    </View>
+                    <Text style={styles.eventTitle} numberOfLines={1}>
+                      {event.titulo}
+                    </Text>
                   </View>
-                  <Text style={styles.eventTitle} numberOfLines={1}>
-                    {event.title}
-                  </Text>
-                </View>
-                
-                <Pressable 
-                  style={styles.moreInfoButton}
-                  onPress={() => setExpandedEvent(isExpanded ? null : event.id)}
-                >
-                  <Text style={styles.moreInfoText}>Más información</Text>
-                  <Ionicons 
-                    name={isExpanded ? "chevron-up" : "chevron-down"} 
-                    size={16} 
-                    color={COLORS.textMuted} 
-                  />
-                </Pressable>
-              </View>
-              
-              {isExpanded && (
-                <View style={styles.eventExpanded}>
-                  <View style={styles.eventDetail}>
-                    <Ionicons name="calendar-outline" size={16} color={COLORS.primaryBlue} />
-                    <Text style={styles.eventDetailText}>{event.date}</Text>
-                  </View>
-                  <View style={styles.eventDetail}>
-                    <Ionicons name="time-outline" size={16} color={COLORS.primaryBlue} />
-                    <Text style={styles.eventDetailText}>{event.time}</Text>
-                  </View>
-                  <View style={styles.eventDetail}>
-                    <Ionicons name="location-outline" size={16} color={COLORS.primaryBlue} />
-                    <Text style={styles.eventDetailText}>{event.location}</Text>
-                  </View>
-                  <Pressable 
-                    style={styles.viewButton}
-                    onPress={() => router.push(`/event/${event.id}`)}
+
+                  <Pressable
+                    style={styles.moreInfoButton}
+                    onPress={() => setExpandedEvent(isExpanded ? null : event.id)}
                   >
-                    <Text style={styles.viewButtonText}>Ver evento</Text>
+                    <Text style={styles.moreInfoText}>Info</Text>
+                    <Ionicons
+                      name={isExpanded ? "chevron-up" : "chevron-down"}
+                      size={16}
+                      color={GLASS.textSecondary}
+                    />
                   </Pressable>
                 </View>
-              )}
-            </View>
-          );
-        })}
+
+                {isExpanded && (
+                  <View style={styles.eventExpanded}>
+                    <View style={styles.eventDetail}>
+                      <Ionicons name="calendar-outline" size={16} color={GLASS.accent} />
+                      <Text style={styles.eventDetailText}>{event.fecha}</Text>
+                    </View>
+                    <View style={styles.eventDetail}>
+                      <Ionicons name="time-outline" size={16} color={GLASS.accent} />
+                      <Text style={styles.eventDetailText}>{event.hora}</Text>
+                    </View>
+                    <View style={styles.eventDetail}>
+                      <Ionicons name="location-outline" size={16} color={GLASS.accent} />
+                      <Text style={styles.eventDetailText}>{event.ubicacion}</Text>
+                    </View>
+                    <Pressable
+                      style={styles.viewButton}
+                      onPress={() => router.push(`/event/${event.id}`)}
+                    >
+                      <Text style={styles.viewButtonText}>Ver detalle completo</Text>
+                      <Ionicons name="arrow-forward" size={16} color="#0F172A" />
+                    </Pressable>
+                  </View>
+                )}
+              </View>
+            );
+          })
+        )}
       </ScrollView>
-      
+
       {/* Account Dropdown Modal */}
       <Modal
         visible={showAccountMenu}
@@ -149,13 +151,13 @@ export default function SavedScreen() {
         animationType="fade"
         onRequestClose={() => setShowAccountMenu(false)}
       >
-        <Pressable 
+        <Pressable
           style={styles.modalOverlay}
           onPress={() => setShowAccountMenu(false)}
         >
-          <View style={styles.accountDropdown}>
+          <BlurView intensity={50} tint="dark" style={styles.accountDropdown}>
             <Pressable style={styles.dropdownItem} onPress={navigateToSettings}>
-              <Ionicons name="settings-outline" size={20} color={COLORS.darkBg} />
+              <Ionicons name="settings-outline" size={20} color={GLASS.textPrimary} />
               <Text style={styles.dropdownItemText}>Configuración</Text>
             </Pressable>
             <View style={styles.dropdownDivider} />
@@ -163,7 +165,7 @@ export default function SavedScreen() {
               <Ionicons name="log-out-outline" size={20} color="#EF4444" />
               <Text style={[styles.dropdownItemText, { color: '#EF4444' }]}>Cerrar sesión</Text>
             </Pressable>
-          </View>
+          </BlurView>
         </Pressable>
       </Modal>
     </View>
@@ -173,82 +175,60 @@ export default function SavedScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.white,
+    backgroundColor: '#0F172A',
   },
-  header: {
-    backgroundColor: COLORS.primaryBlue,
-    paddingTop: 48,
-    paddingHorizontal: 16,
-    paddingBottom: 16,
+  // BACKGROUND
+  bgGradient: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#0F172A',
   },
-  searchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  bgCircle1: {
+    position: 'absolute',
+    width: 400,
+    height: 400,
+    borderRadius: 200,
+    backgroundColor: '#2563EB',
+    opacity: 0.1,
+    top: -100,
+    right: -100,
   },
-  mascotIcon: {
-    width: 36,
-    height: 36,
+  bgCircle2: {
+    position: 'absolute',
+    width: 300,
+    height: 300,
+    borderRadius: 150,
+    backgroundColor: '#22D3EE',
+    opacity: 0.08,
+    bottom: 200,
+    left: -100,
   },
-  searchContainer: {
-    flex: 1,
-    backgroundColor: COLORS.white,
-    borderRadius: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-  },
-  searchText: {
-    color: COLORS.textMuted,
-    fontSize: 14,
-  },
-  iconButton: {
-    padding: 4,
-  },
+  // HEADER
   scrollView: {
     flex: 1,
+    marginTop: 0, // Header is now part of flow or we rely on padding? ActiveHeader is transparent
+    // Wait, ActiveHeader in Home was: paddingBottom: 20 etc. 
+    // In Home it was "borderBottomWidth:1".
+    // In Saved it was "position: absolute".
+    // Let's adjust ScrollView margin to 0 for now and check if we need padding.
   },
   scrollContent: {
     padding: 20,
     paddingBottom: 120,
   },
-  filtersContainer: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 24,
-  },
-  filterPill: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-    backgroundColor: COLORS.white,
-    borderWidth: 2,
-    borderColor: COLORS.primaryBlue,
-  },
-  filterPillActive: {
-    backgroundColor: COLORS.primaryBlue,
-  },
-  filterText: {
-    fontWeight: '600',
-    color: COLORS.primaryBlue,
-  },
-  filterTextActive: {
-    fontWeight: '600',
-    color: COLORS.white,
-  },
   sectionTitle: {
-    color: COLORS.darkBg,
-    fontSize: 20,
-    fontWeight: '700',
-    marginBottom: 16,
+    color: GLASS.textPrimary,
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
   },
+  // CARD
   eventCard: {
-    backgroundColor: COLORS.primaryBlue,
-    borderRadius: 12,
+    backgroundColor: 'rgba(30, 41, 59, 0.4)',
+    borderRadius: 16,
     marginBottom: 12,
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: GLASS.border,
   },
   eventCardHeader: {
     flexDirection: 'row',
@@ -262,17 +242,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   eventIconContainer: {
-    backgroundColor: COLORS.white,
-    borderRadius: 20,
-    padding: 6,
+    backgroundColor: 'rgba(34, 211, 238, 0.1)',
+    borderRadius: 12,
+    padding: 8,
     marginRight: 12,
-  },
-  eventIcon: {
-    width: 24,
-    height: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(34, 211, 238, 0.2)',
   },
   eventTitle: {
-    color: COLORS.white,
+    color: GLASS.textPrimary,
     fontSize: 16,
     fontWeight: '600',
     flex: 1,
@@ -280,20 +258,22 @@ const styles = StyleSheet.create({
   moreInfoButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.white,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
     gap: 4,
   },
   moreInfoText: {
-    color: COLORS.textMuted,
+    color: GLASS.textSecondary,
     fontSize: 12,
   },
   eventExpanded: {
-    backgroundColor: COLORS.white,
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
     padding: 16,
-    gap: 10,
+    gap: 12,
+    borderTopWidth: 1,
+    borderTopColor: GLASS.border,
   },
   eventDetail: {
     flexDirection: 'row',
@@ -301,38 +281,63 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   eventDetailText: {
-    color: COLORS.darkBg,
+    color: GLASS.textSecondary,
     fontSize: 14,
   },
   viewButton: {
-    backgroundColor: COLORS.primaryBlue,
-    borderRadius: 8,
+    backgroundColor: GLASS.accent,
+    borderRadius: 12,
     paddingVertical: 12,
     alignItems: 'center',
     marginTop: 8,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 8,
   },
   viewButtonText: {
-    color: COLORS.white,
-    fontWeight: '600',
+    color: '#0F172A',
+    fontWeight: 'bold',
+    fontSize: 14,
   },
+  // STATES
+  loadingContainer: {
+    alignItems: 'center',
+    padding: 20
+  },
+  loadingText: {
+    marginTop: 10,
+    color: GLASS.textSecondary
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    padding: 40,
+    backgroundColor: 'rgba(255,255,255,0.02)',
+    borderRadius: 20,
+    borderStyle: 'dashed',
+    borderWidth: 1,
+    borderColor: GLASS.border,
+  },
+  emptyText: {
+    textAlign: 'center',
+    color: GLASS.textSecondary,
+    marginTop: 16,
+  },
+  // MODAL
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.3)',
     justifyContent: 'flex-start',
     alignItems: 'flex-end',
     paddingTop: 100,
-    paddingRight: 16,
+    paddingRight: 20,
   },
   accountDropdown: {
-    backgroundColor: COLORS.white,
-    borderRadius: 12,
-    paddingVertical: 8,
+    backgroundColor: 'rgba(15, 23, 42, 0.9)',
+    borderRadius: 16,
+    padding: 8,
     minWidth: 180,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 10,
+    borderWidth: 1,
+    borderColor: GLASS.border,
+    overflow: 'hidden',
   },
   dropdownItem: {
     flexDirection: 'row',
@@ -342,12 +347,12 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   dropdownItemText: {
-    fontSize: 16,
-    color: COLORS.darkBg,
+    fontSize: 14,
+    color: GLASS.textPrimary,
   },
   dropdownDivider: {
     height: 1,
-    backgroundColor: COLORS.inputGray,
-    marginHorizontal: 16,
+    backgroundColor: GLASS.border,
+    marginVertical: 4,
   },
 });

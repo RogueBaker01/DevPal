@@ -36,13 +36,13 @@ export default function EventCard({ event, onPress }: EventCardProps) {
   const getCategoryIcon = () => {
     switch (event.category) {
       case "workshop":
-        return "🔧";
+        return "W";
       case "meetup":
-        return "👥";
+        return "M";
       case "conference":
-        return "🎤";
+        return "C";
       default:
-        return "📅";
+        return "E";
     }
   };
 
@@ -61,22 +61,22 @@ export default function EventCard({ event, onPress }: EventCardProps) {
           {event.title}
         </Text>
         <Text style={styles.datetime}>
-          📅 {event.date} • ⏰ {event.time}
+          {event.date} • {event.time}
         </Text>
         <Text style={styles.location} numberOfLines={1}>
-          📍 {event.location}
+          {event.location}
         </Text>
       </View>
 
       {/* Right: Badge */}
       {event.popular && (
         <View style={styles.badge}>
-          <Text style={styles.badgeText}>🔥 Popular</Text>
+          <Text style={styles.badgeText}>Popular</Text>
         </View>
       )}
       {event.spotsLeft && event.spotsLeft <= 5 && (
         <View style={[styles.badge, styles.badgeWarning]}>
-          <Text style={styles.badgeText}>⚡ {event.spotsLeft} cupos</Text>
+          <Text style={styles.badgeText}>{event.spotsLeft} cupos</Text>
         </View>
       )}
     </TouchableOpacity>
