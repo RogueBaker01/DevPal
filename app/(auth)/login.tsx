@@ -20,7 +20,6 @@ import { useAuth } from '@/contexts/AuthContext';
 
 const { width } = Dimensions.get('window');
 
-// Glass UI tokens (matching rest of app)
 const GLASS = {
   bg: 'rgba(30, 41, 59, 0.7)',
   bgDark: '#0F172A',
@@ -34,9 +33,6 @@ const GLASS = {
   errorBg: 'rgba(239, 68, 68, 0.15)',
 };
 
-/**
- * Login Screen - Glass UI Dark Theme
- */
 export default function LoginScreen() {
   const router = useRouter();
   const { signIn } = useAuth();
@@ -66,9 +62,7 @@ export default function LoginScreen() {
       const response = await AuthService.login(email.trim(), password, rememberMe);
 
       if (response.user_id) {
-        // Actualizar estado global de autenticación
         await signIn({ ...response, email: email.trim() }, rememberMe);
-        // La navegación se maneja automáticamente por AuthContext
       } else {
         setError('Error al iniciar sesion. Intenta de nuevo.');
       }
@@ -93,7 +87,6 @@ export default function LoginScreen() {
     <View style={styles.container}>
       <StatusBar style="light" />
 
-      {/* Background decorations */}
       <View style={styles.bgCircle1} />
       <View style={styles.bgCircle2} />
       <View style={styles.bgCircle3} />
@@ -107,7 +100,6 @@ export default function LoginScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
-          {/* Logo/Mascot Section */}
           <View style={styles.logoSection}>
             <Image
               source={require('@/assets/images/devpal-mascot.png')}
@@ -117,12 +109,10 @@ export default function LoginScreen() {
             <Text style={styles.brandText}>DevPal</Text>
           </View>
 
-          {/* Glass Card Form */}
           <View style={styles.glassCard}>
             <Text style={styles.title}>Bienvenido de regreso!</Text>
             <Text style={styles.subtitle}>Inicia sesion para continuar</Text>
 
-            {/* Form inputs */}
             <View style={styles.inputsContainer}>
               <View style={styles.inputWrapper}>
                 <Ionicons name="mail-outline" size={20} color={GLASS.textSecondary} style={styles.inputIcon} />
@@ -163,7 +153,6 @@ export default function LoginScreen() {
               </View>
             </View>
 
-            {/* Remember me + Forgot password */}
             <View style={styles.optionsRow}>
               <Pressable
                 onPress={() => setRememberMe(!rememberMe)}
@@ -180,7 +169,6 @@ export default function LoginScreen() {
               </Pressable>
             </View>
 
-            {/* Error message */}
             {error ? (
               <View style={styles.errorContainer}>
                 <Ionicons name="alert-circle" size={18} color={GLASS.error} />
@@ -188,7 +176,6 @@ export default function LoginScreen() {
               </View>
             ) : null}
 
-            {/* Login button */}
             <Pressable
               onPress={handleLogin}
               style={[styles.loginButton, loading && styles.buttonDisabled]}
@@ -204,14 +191,12 @@ export default function LoginScreen() {
               )}
             </Pressable>
 
-            {/* Divider */}
             <View style={styles.dividerContainer}>
               <View style={styles.dividerLine} />
               <Text style={styles.dividerText}>o continua con</Text>
               <View style={styles.dividerLine} />
             </View>
 
-            {/* Social buttons */}
             <View style={styles.socialContainer}>
               <Pressable style={styles.socialButton}>
                 <Text style={styles.googleIcon}>G</Text>
@@ -225,7 +210,6 @@ export default function LoginScreen() {
             </View>
           </View>
 
-          {/* Register link */}
           <View style={styles.registerLinkContainer}>
             <Text style={styles.registerLinkText}>No tienes cuenta? </Text>
             <Pressable onPress={() => router.push('/(auth)/register')}>

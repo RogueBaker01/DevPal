@@ -29,7 +29,6 @@ export function LeaderboardCard({
     onPress
 }: LeaderboardCardProps) {
 
-    // Colores especiales para top 3
     const getRankingColor = () => {
         if (ranking === 1) return '#FFD700'; // Gold
         if (ranking === 2) return '#C0C0C0'; // Silver
@@ -53,7 +52,6 @@ export function LeaderboardCard({
             ]}
             onPress={onPress}
         >
-            {/* Ranking Badge */}
             <View style={[styles.rankingBadge, { borderColor: getRankingColor() }]}>
                 {getRankingIcon() ? (
                     <Ionicons name={getRankingIcon() as any} size={20} color={getRankingColor()} />
@@ -64,7 +62,6 @@ export function LeaderboardCard({
                 )}
             </View>
 
-            {/* Avatar */}
             <View style={styles.avatarContainer}>
                 {avatar_url ? (
                     <Image source={{ uri: avatar_url }} style={styles.avatar} />
@@ -73,13 +70,11 @@ export function LeaderboardCard({
                         <Ionicons name="person" size={24} color={COLORS.textSecondary} />
                     </View>
                 )}
-                {/* Nivel Badge */}
                 <View style={styles.nivelBadge}>
                     <Text style={styles.nivelText}>{nivel}</Text>
                 </View>
             </View>
 
-            {/* User Info */}
             <View style={styles.infoContainer}>
                 <Text style={styles.nombre} numberOfLines={1}>
                     {nombre} {apellidos}
@@ -108,7 +103,6 @@ export function LeaderboardCard({
                 </View>
             </View>
 
-            {/* Arrow */}
             <Ionicons name="chevron-forward" size={20} color={COLORS.textTertiary} />
         </Pressable>
     );

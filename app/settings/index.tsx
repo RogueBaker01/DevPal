@@ -7,7 +7,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BlurView } from 'expo-blur';
 import { useAuth } from '@/contexts/AuthContext';
 
-// GLASS Tokens
 const GLASS = {
     bg: 'rgba(30, 41, 59, 0.7)',
     border: 'rgba(255, 255, 255, 0.1)',
@@ -57,8 +56,7 @@ export default function SettingsScreen() {
                     text: "Salir",
                     style: "destructive",
                     onPress: async () => {
-                        await signOut(); // Limpia sesión y actualiza estado global
-                        // La navegación se maneja automáticamente por AuthContext
+                        await signOut();
                     }
                 }
             ]
@@ -69,12 +67,10 @@ export default function SettingsScreen() {
         <View style={styles.container}>
             <StatusBar style="light" />
 
-            {/* Background Decorations */}
             <View style={styles.bgGradient} />
             <View style={styles.bgCircle1} />
             <View style={styles.bgCircle2} />
 
-            {/* Glass Header */}
             <BlurView intensity={30} tint="dark" style={styles.headerGlass}>
                 <Pressable onPress={() => router.back()} style={styles.backButton}>
                     <Ionicons name="arrow-back" size={24} color={GLASS.textPrimary} />
@@ -88,7 +84,6 @@ export default function SettingsScreen() {
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
             >
-                {/* Account Section */}
                 <Text style={styles.sectionTitle}>Cuenta</Text>
                 <BlurView intensity={20} tint="dark" style={styles.sectionContainer}>
                     <Pressable style={styles.settingItem} onPress={() => router.push('/settings/edit-profile')}>
@@ -112,7 +107,6 @@ export default function SettingsScreen() {
                     </Pressable>
                 </BlurView>
 
-                {/* Preferences Section */}
                 <Text style={styles.sectionTitle}>Preferencias</Text>
                 <BlurView intensity={20} tint="dark" style={styles.sectionContainer}>
                     <View style={styles.settingItem}>
@@ -131,7 +125,6 @@ export default function SettingsScreen() {
                     </View>
                 </BlurView>
 
-                {/* About Section */}
                 <Text style={styles.sectionTitle}>Acerca de</Text>
                 <BlurView intensity={20} tint="dark" style={styles.sectionContainer}>
                     <Pressable style={styles.settingItem} onPress={() => router.push('/settings/terms')}>
@@ -155,7 +148,6 @@ export default function SettingsScreen() {
                     </Pressable>
                 </BlurView>
 
-                {/* Logout Button */}
                 <Pressable style={styles.logoutButton} onPress={handleLogout}>
                     <Ionicons name="log-out-outline" size={20} color={GLASS.danger} />
                     <Text style={styles.logoutText}>Cerrar Sesión</Text>

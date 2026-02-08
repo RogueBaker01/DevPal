@@ -23,17 +23,12 @@ import { ProgressCircle } from "@/components/ProgressCircle";
 import { useAuth } from "@/contexts/AuthContext";
 import { BASE_URL } from "@/constants/Config";
 
-// ... (lines 23-149)
-
-
-
-// Nuevos tokens para Glass UI
 const GLASS = {
   bg: 'rgba(30, 41, 59, 0.7)',
   border: 'rgba(255, 255, 255, 0.1)',
   textPrimary: '#F8FAFC',
   textSecondary: '#94A3B8',
-  accent: '#22D3EE', // Cian Eléctrico
+  accent: '#22D3EE',
 };
 
 export default function ProfileScreen() {
@@ -45,7 +40,6 @@ export default function ProfileScreen() {
   const [showAccountMenu, setShowAccountMenu] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
-  // Form State
   const [newProject, setNewProject] = useState({
     titulo: '',
     descripcion: '',
@@ -55,7 +49,6 @@ export default function ProfileScreen() {
   });
   const [submitting, setSubmitting] = useState(false);
 
-  // Recargar perfil al entrar (para actualizar XP y proyectos)
   useFocusEffect(
     React.useCallback(() => {
       loadProfile();
@@ -64,7 +57,6 @@ export default function ProfileScreen() {
 
   const loadProfile = async () => {
     try {
-      // setLoading(true); // Opcional: no mostrar loading completo para actualizaciones suaves
       const data = await AuthService.getProfile();
       setProfile(data);
     } catch (error) {
@@ -112,7 +104,6 @@ export default function ProfileScreen() {
   const handleLogout = async () => {
     setShowAccountMenu(false);
     await signOut();
-    // La navegación se maneja automáticamente por AuthContext
   };
 
   const handlePickAvatar = async () => {
@@ -139,14 +130,12 @@ export default function ProfileScreen() {
     try {
       const response = await AuthService.uploadAvatar(uri);
 
-      // Construct full URL if relative (for immediate display)
       let fullUrl = response.avatar_url;
       if (fullUrl && fullUrl.startsWith('/')) {
         const { BASE_URL } = require('@/constants/Config');
         fullUrl = `${BASE_URL}${response.avatar_url}`;
       }
 
-      // Update local state directly
       setProfile((prev: any) => ({
         ...prev,
         avatar_url: fullUrl,
@@ -173,15 +162,12 @@ export default function ProfileScreen() {
 
   const { perfil, recent_activity } = profile;
 
-  // Calcular progreso dentro del nivel actual (0-1000 XP)
-  // Backend ahora envía 'xp_nivel_actual' que es el XP acumulado en este nivel
   const levelProgress = (perfil.xp_nivel_actual / 1000) * 100;
 
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
 
-      {/* Background Decorativo */}
       <View style={styles.bgGradient} />
       <View style={styles.bgCircle1} />
       <View style={styles.bgCircle2} />
@@ -190,7 +176,6 @@ export default function ProfileScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header Glass Card */}
         <BlurView intensity={40} tint="dark" style={styles.glassCard}>
           <View style={styles.headerTop}>
             <Text style={styles.headerTitle}>Mi Perfil</Text>
@@ -218,7 +203,6 @@ export default function ProfileScreen() {
             </View>
           </View>
 
-          {/* XP Bar */}
           <View style={styles.xpSection}>
             <View style={styles.xpLabels}>
               <Text style={styles.xpText}>XP {perfil.xp_nivel_actual} / 1000</Text>
@@ -230,9 +214,7 @@ export default function ProfileScreen() {
           </View>
         </BlurView>
 
-        {/* Dashboard Stats */}
         <View style={styles.statsRow}>
-          {/* Usamos Views con color sólido semitransparente para mejor performance que muchos BlurViews pequeños */}
           <View style={styles.statCard}>
             <Ionicons name="trophy" size={24} color="#F59E0B" />
             <Text style={styles.statValue}>{perfil.logros}</Text>
@@ -250,7 +232,6 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* Projects & Activity Section */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Portafolio & Actividad</Text>
           <Pressable style={styles.addProjectBtn} onPress={() => setShowProjectModal(true)}>
@@ -269,7 +250,6 @@ export default function ProfileScreen() {
                 <Text style={styles.activityTitle}>{item.title}</Text>
                 <Text style={styles.activityDate}>{item.date} • {item.status}</Text>
 
-                {/* Renderizar detalles de proyecto si es tipo proyecto */}
                 {item.type === 'project' && (
                   <View style={styles.projectTags}>
                     {item.tecnologias && item.tecnologias.map((tech: string, i: number) => (
@@ -297,7 +277,6 @@ export default function ProfileScreen() {
 
       </ScrollView>
 
-      {/* Modal Add Project */}
       <Modal visible={showProjectModal} animationType="slide" transparent>
         <BlurView intensity={95} tint="dark" style={styles.modalContainer}>
           <View style={styles.modalContent}>
@@ -372,7 +351,6 @@ export default function ProfileScreen() {
         </BlurView>
       </Modal>
 
-      {/* Account Dropdown Modal (Reused) */}
       <Modal
         visible={showAccountMenu}
         transparent
@@ -407,7 +385,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#0F172A'
   },
-  // FONDOS DECORATIVOS
   bgGradient: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: '#0F172A',
@@ -436,9 +413,8 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 20,
     paddingTop: 60,
-    paddingBottom: 130, // Espacio para el Tab Bar Flotante
+    paddingBottom: 130,
   },
-  // HEADER
   glassCard: {
     padding: 24,
     borderRadius: 30,
@@ -518,7 +494,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 14,
   },
-  // XP BAR
   xpSection: {
     marginTop: 8,
   },
@@ -547,7 +522,6 @@ const styles = StyleSheet.create({
     backgroundColor: GLASS.accent,
     borderRadius: 3,
   },
-  // STATS
   statsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -562,7 +536,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: GLASS.border,
-    aspectRatio: 1, // Cuadrados
+    aspectRatio: 1,
     justifyContent: 'center',
   },
   statValue: {
@@ -575,7 +549,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: GLASS.textSecondary,
   },
-  // PROJECTS & ACTIVITY
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -672,7 +645,6 @@ const styles = StyleSheet.create({
     color: GLASS.textSecondary,
     marginTop: 4,
   },
-  // MODAL
   modalContainer: {
     flex: 1,
     justifyContent: 'flex-end',
@@ -734,7 +706,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
   },
-  // Dropdown
   dropdownOverlay: {
     flex: 1,
     alignItems: 'flex-end',

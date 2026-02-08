@@ -29,7 +29,6 @@ export function ChallengeCardSkeleton() {
 
     return (
         <View style={styles.card}>
-            {/* Header */}
             <View style={styles.header}>
                 <Animated.View style={[styles.icon, animatedStyle]} />
                 <View style={styles.headerText}>
@@ -38,14 +37,12 @@ export function ChallengeCardSkeleton() {
                 </View>
             </View>
 
-            {/* Stats */}
             <View style={styles.stats}>
                 <Animated.View style={[styles.stat, animatedStyle]} />
                 <Animated.View style={[styles.stat, animatedStyle]} />
                 <Animated.View style={[styles.stat, animatedStyle]} />
             </View>
 
-            {/* Description */}
             <View style={styles.description}>
                 <Animated.View style={[styles.textLine, animatedStyle]} />
                 <Animated.View style={[styles.textLineShort, animatedStyle]} />

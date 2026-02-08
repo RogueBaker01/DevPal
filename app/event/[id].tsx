@@ -5,7 +5,6 @@ import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { EventsService } from '@/services/eventsService';
 
-// Design tokens
 const COLORS = {
   darkBg: '#0F172A',
   primaryBlue: '#2563EB',
@@ -15,7 +14,6 @@ const COLORS = {
   textMuted: '#64748B',
 };
 
-// Fallback images by category
 const FALLBACK_IMAGES: Record<string, string[]> = {
   "Hackathon": [
     "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=800&q=80",
@@ -88,8 +86,6 @@ export default function EventScreen() {
 
   const checkSavedStatus = async () => {
     try {
-      // Basic check: get all saved events and find this one
-      // Optimization: create specific endpoint later
       const savedEvents = await EventsService.getSaved();
       const isSavedEvent = savedEvents.some((e: any) => e.id === id);
       setIsSaved(isSavedEvent);
@@ -117,7 +113,6 @@ export default function EventScreen() {
       if (isSaved) {
         await EventsService.unsave(event.id);
         setIsSaved(false);
-        // Alert.alert('Eliminado', 'Evento eliminado de favoritos');
       } else {
         await EventsService.save(event.id);
         setIsSaved(true);
@@ -157,7 +152,6 @@ export default function EventScreen() {
     <View style={styles.container}>
       <StatusBar style="light" />
 
-      {/* Hero image with overlay header */}
       <View style={styles.heroContainer}>
         <EventImage
           uri={event.imagen_url}
@@ -165,10 +159,8 @@ export default function EventScreen() {
           category={event.categoria}
         />
 
-        {/* Gradient overlay */}
         <View style={styles.heroOverlay} />
 
-        {/* Header buttons */}
         <View style={styles.headerButtons}>
           <Pressable
             onPress={() => router.back()}
@@ -189,7 +181,6 @@ export default function EventScreen() {
           </Pressable>
         </View>
 
-        {/* Category badges */}
         <View style={styles.badgesContainer}>
           <View style={styles.badge}>
             <Text style={styles.badgeText}>{event.categoria}</Text>
@@ -197,18 +188,15 @@ export default function EventScreen() {
         </View>
       </View>
 
-      {/* Content */}
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Title section */}
         <Text style={styles.title}>
           Detalles del Evento
         </Text>
 
-        {/* Event card */}
         <View style={styles.eventCard}>
           <Text style={styles.eventTitle}>
             {event.titulo}
@@ -236,7 +224,6 @@ export default function EventScreen() {
           </View>
         </View>
 
-        {/* Description */}
         <View style={styles.descriptionCard}>
           <Text style={styles.descriptionTitle}>
             Descripción
@@ -246,7 +233,6 @@ export default function EventScreen() {
           </Text>
         </View>
 
-        {/* Map preview - Sólo si tiene coordenadas y no es Online */}
         {event.latitud && event.longitud &&
           parseFloat(event.latitud) !== 0 && parseFloat(event.longitud) !== 0 &&
           event.ubicacion?.toLowerCase() !== 'online' && (
@@ -262,7 +248,6 @@ export default function EventScreen() {
           )}
       </ScrollView>
 
-      {/* Bottom action bar */}
       <View style={styles.bottomBar}>
         <Pressable style={styles.secondaryButton} onPress={handleShare}>
           <Ionicons name="share-outline" size={20} color={COLORS.primaryBlue} />

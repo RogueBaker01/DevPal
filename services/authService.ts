@@ -8,11 +8,10 @@ export const AuthService = {
         try {
             const response = await api.post(ENDPOINTS.AUTH.LOGIN, { email, password });
 
-            // ✅ Guardar sesión completa con AuthStorage
             if (response.data.user_id) {
                 const userData = {
                     ...response.data,
-                    email, // Incluir email en datos guardados
+                    email,
                 };
                 await AuthStorage.saveSession(userData, rememberMe);
             }
@@ -32,7 +31,6 @@ export const AuthService = {
                 password
             });
 
-            // ✅ Guardar sesión automáticamente al registrarse
             if (response.data.user_id) {
                 const userData = {
                     ...response.data,
@@ -55,9 +53,7 @@ export const AuthService = {
             const response = await api.get(ENDPOINTS.AUTH.ME(userId));
             const data = response.data;
 
-            // ✅ Transformar URL relativa a absoluta si es necesario
             if (data.avatar_url && data.avatar_url.startsWith('/')) {
-                // Importar BASE_URL dinámicamente o usar la constante importada arriba
                 const { BASE_URL } = require('../constants/Config');
                 data.avatar_url = `${BASE_URL}${data.avatar_url}`;
             }
@@ -88,7 +84,6 @@ export const AuthService = {
 
     logout: async () => {
         try {
-            // ✅ Usar AuthStorage para limpiar sesión
             await AuthStorage.clearSession();
         } catch (error) {
             console.error('Error logging out:', error);
@@ -102,13 +97,8 @@ export const AuthService = {
 
             const response = await api.put(`${ENDPOINTS.AUTH.ME(userId)}`, data);
 
-            // Actualizar datos en sesión local si es necesario (opcional pero recomendado)
-            const session = await AuthStorage.getUserInfo();
             if (session) {
                 const updatedSession = { ...session, ...response.data.user };
-                // Nota: AuthStorage.saveSession espera la estructura completa de login/register, 
-                // tal vez sea mejor solo actualizar lo necesario o volver a hacer fetch del perfil
-                // Por ahora confiamos en que al recargar la app o navegar se actualiza.
             }
 
             return response.data;

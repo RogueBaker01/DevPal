@@ -19,22 +19,16 @@ import { BadgeCard } from '@/components/BadgeCard';
 import { TabbedLayout } from '@/components/TabbedLayout';
 import { COLORS, RADIUS, SPACING, TYPOGRAPHY, SHADOWS } from '@/constants/designTokens';
 
-/**
- * Leaderboard Screen - Sistema de Ranking Gamificado
- * Muestra ranking global, badges y progreso del usuario
- */
 export default function LeaderboardScreen() {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState(0);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
 
-    // Leaderboard data
     const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
     const [currentUserId, setCurrentUserId] = useState<string | null>(null);
     const [userRanking, setUserRanking] = useState<UserRanking | null>(null);
 
-    // Badges data
     const [badgesDesbloqueados, setBadgesDesbloqueados] = useState<Badge[]>([]);
     const [badgesProximos, setBadgesProximos] = useState<Badge[]>([]);
 
@@ -102,7 +96,6 @@ export default function LeaderboardScreen() {
         loadAllData();
     }, []);
 
-    // Tab 1: Leaderboard
     const leaderboardTab = (
         <ScrollView
             style={styles.tabContent}
@@ -111,7 +104,6 @@ export default function LeaderboardScreen() {
             }
             contentContainerStyle={styles.scrollContent}
         >
-            {/* User Ranking Card */}
             {userRanking && (
                 <View style={styles.userRankingCard}>
                     <View style={styles.rankingHeader}>
@@ -148,10 +140,8 @@ export default function LeaderboardScreen() {
                 </View>
             )}
 
-            {/* Leaderboard Title */}
             <Text style={styles.sectionTitle}>🏆 Top 100 Developers</Text>
 
-            {/* Leaderboard List */}
             {loading ? (
                 <ActivityIndicator size="large" color={COLORS.primary} style={{ marginTop: SPACING['3xl'] }} />
             ) : leaderboard.length === 0 ? (
@@ -166,7 +156,6 @@ export default function LeaderboardScreen() {
                         {...entry}
                         isCurrentUser={entry.usuario_id === currentUserId}
                         onPress={() => {
-                            // Navegar a perfil del usuario
                             console.log('Ver perfil:', entry.usuario_id);
                         }}
                     />
@@ -175,7 +164,6 @@ export default function LeaderboardScreen() {
         </ScrollView>
     );
 
-    // Tab 2: Mis Badges
     const badgesTab = (
         <ScrollView
             style={styles.tabContent}
@@ -184,7 +172,6 @@ export default function LeaderboardScreen() {
             }
             contentContainerStyle={styles.scrollContent}
         >
-            {/* Desbloqueados */}
             <View style={styles.badgesSection}>
                 <View style={styles.badgesSectionHeader}>
                     <Ionicons name="ribbon" size={24} color={COLORS.primary} />
@@ -214,7 +201,6 @@ export default function LeaderboardScreen() {
                 )}
             </View>
 
-            {/* Próximos */}
             {badgesProximos.length > 0 && (
                 <View style={styles.badgesSection}>
                     <View style={styles.badgesSectionHeader}>
@@ -245,7 +231,6 @@ export default function LeaderboardScreen() {
         <View style={styles.container}>
             <StatusBar style="light" />
 
-            {/* Header */}
             <View style={styles.header}>
                 <View style={styles.headerContent}>
                     <Pressable onPress={() => router.back()} style={styles.backButton}>
@@ -258,7 +243,6 @@ export default function LeaderboardScreen() {
                 </View>
             </View>
 
-            {/* Tabs */}
             <TabbedLayout tabs={tabs} />
         </View>
     );

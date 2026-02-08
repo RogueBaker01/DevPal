@@ -14,7 +14,6 @@ import { Ionicons } from '@expo/vector-icons';
 
 const { width } = Dimensions.get('window');
 
-// Glass UI tokens (matching rest of app)
 const GLASS = {
   bg: 'rgba(30, 41, 59, 0.7)',
   bgDark: '#0F172A',
@@ -27,7 +26,6 @@ const GLASS = {
   cardBg: 'rgba(30, 41, 59, 0.6)',
 };
 
-// Interest categories with icons
 const INTERESTS = [
   { 
     id: 'hackathons', 
@@ -73,9 +71,6 @@ const INTERESTS = [
   },
 ];
 
-/**
- * Interests Selection Screen - Glass UI Dark Theme
- */
 export default function InterestsScreen() {
   const router = useRouter();
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
@@ -100,7 +95,6 @@ export default function InterestsScreen() {
     <View style={styles.container}>
       <StatusBar style="light" />
       
-      {/* Background decorations */}
       <View style={styles.bgCircle1} />
       <View style={styles.bgCircle2} />
       <View style={styles.bgCircle3} />
@@ -110,7 +104,6 @@ export default function InterestsScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Header Section */}
         <View style={styles.headerSection}>
           <Image
             source={require('@/assets/images/devpal-mascot.png')}
@@ -118,7 +111,6 @@ export default function InterestsScreen() {
             resizeMode="contain"
           />
           
-          {/* Progress indicator */}
           <View style={styles.progressContainer}>
             <View style={styles.progressDot} />
             <View style={[styles.progressDot, styles.progressDotInactive]} />
@@ -131,9 +123,7 @@ export default function InterestsScreen() {
           </Text>
         </View>
         
-        {/* Glass Card Container */}
         <View style={styles.glassCard}>
-          {/* Grid of interest cards */}
           <View style={styles.grid}>
             {INTERESTS.map((interest) => {
               const isSelected = selectedInterests.includes(interest.id);
@@ -146,13 +136,11 @@ export default function InterestsScreen() {
                     isSelected && styles.interestCardSelected,
                   ]}
                 >
-                  {/* Background Image */}
                   <Image 
                     source={{ uri: interest.image }}
                     style={styles.cardImage}
                   />
                   
-                  {/* Overlay */}
                   <View style={styles.cardOverlay}>
                     <View style={styles.cardContent}>
                       <View style={[
@@ -169,7 +157,6 @@ export default function InterestsScreen() {
                       <Text style={styles.cardDescription}>{interest.description}</Text>
                     </View>
                     
-                    {/* Selection indicator */}
                     {isSelected && (
                       <View style={styles.checkmark}>
                         <Ionicons name="checkmark" size={14} color={GLASS.bgDark} />
@@ -181,7 +168,6 @@ export default function InterestsScreen() {
             })}
           </View>
           
-          {/* Selection count */}
           <View style={styles.selectionInfo}>
             <Ionicons name="information-circle-outline" size={18} color={GLASS.textSecondary} />
             <Text style={styles.selectionText}>
@@ -193,7 +179,6 @@ export default function InterestsScreen() {
           </View>
         </View>
         
-        {/* Action Buttons */}
         <View style={styles.buttonsContainer}>
           <Pressable 
             onPress={handleNext}

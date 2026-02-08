@@ -19,7 +19,6 @@ import { ExpandableEventCard } from "@/components/ExpandableEventCard"; // Needs
 import { ActiveHeader } from "@/app/components/ActiveHeader";
 import { COLORS as OLD_COLORS, RADIUS, SPACING, TYPOGRAPHY, SHADOWS } from "@/constants/designTokens";
 
-// New Glass Tokens (matching Profile)
 const GLASS = {
   bg: 'rgba(30, 41, 59, 0.7)',
   border: 'rgba(255, 255, 255, 0.1)',
@@ -29,10 +28,8 @@ const GLASS = {
   inputBg: 'rgba(15, 23, 42, 0.6)',
 };
 
-// Filter options
 const FILTERS = ["Hackathons", "Conferencias", "Talleres", "Todos"];
 
-// Fallback images by category (20+ options total)
 const FALLBACK_IMAGES: Record<string, string[]> = {
   "Hackathon": [
     "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=800&q=80",
@@ -94,7 +91,6 @@ export default function HomeScreen() {
   const [activeFilter, setActiveFilter] = useState("Hackathons");
   const [showAccountMenu, setShowAccountMenu] = useState(false);
 
-  // Backend data state
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
@@ -124,8 +120,6 @@ export default function HomeScreen() {
 
   const loadUserProfile = async () => {
     try {
-      // We fetch profile to get unread notifications count
-      // In a real app, we might use a context or global store
       const { AuthService } = require('@/services/authService');
       const profile = await AuthService.getProfile();
       if (profile && profile.unread_notifications_count !== undefined) {
@@ -174,12 +168,10 @@ export default function HomeScreen() {
     <View style={styles.container}>
       <StatusBar style="light" />
 
-      {/* Decorative Background */}
       <View style={styles.bgGradient} />
       <View style={styles.bgCircle1} />
       <View style={styles.bgCircle2} />
 
-      {/* Header */}
       <ActiveHeader
         unreadNotifications={unreadNotifications}
         userAvatarUrl={userAvatarUrl}
@@ -191,13 +183,11 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Hero Section - Prominent Bento Card */}
         <View style={styles.heroSection}>
           <Text style={styles.greetingText}>¡Hola, Dev!</Text>
           <Text style={styles.subGreeting}>¿Qué vas a construir hoy?</Text>
         </View>
 
-        {/* Bento Grid - Quick Actions */}
         <View style={styles.bentoGrid}>
           <Pressable
             style={[styles.dailyChallengeCard, dailyChallengeCompleted && styles.dailyChallengeCardCompleted]}
@@ -220,7 +210,6 @@ export default function HomeScreen() {
           </Pressable>
         </View>
 
-        {/* Filter pills */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -245,7 +234,6 @@ export default function HomeScreen() {
           ))}
         </ScrollView>
 
-        {/* Events section */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Próximos eventos</Text>
           <Pressable onPress={() => router.push('/search')}>
@@ -267,10 +255,7 @@ export default function HomeScreen() {
           </View>
         ) : (
           events.map((event) => (
-            // We might need to update ExpandableEventCard to accept dark mode props or style it internally
-            // For now, let's wrap it in a View that might provide context or just use standard View for now
             <View key={event.id} style={{ marginBottom: 16 }}>
-              {/* Custom Dark Card implementation for now to ensure look */}
               <Pressable
                 style={styles.eventCard}
                 onPress={() => router.push(`/event/${event.id}`)}
@@ -299,7 +284,6 @@ export default function HomeScreen() {
         )}
       </ScrollView>
 
-      {/* Account Dropdown Modal */}
       <Modal
         visible={showAccountMenu}
         transparent
@@ -334,7 +318,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#0F172A',
   },
-  // BACKGROUND
   bgGradient: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: '#0F172A',
@@ -359,7 +342,6 @@ const styles = StyleSheet.create({
     bottom: 200,
     left: -100,
   },
-  // HEADER
   headerGlass: {
     paddingTop: 50,
     paddingHorizontal: 20,
@@ -420,7 +402,6 @@ const styles = StyleSheet.create({
     color: GLASS.textSecondary,
     marginTop: 4,
   },
-  // BENTO GRID
   bentoGrid: {
     marginBottom: 24,
   },
@@ -432,7 +413,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     padding: 20,
     borderWidth: 1,
-    borderColor: 'rgba(245, 158, 11, 0.3)', // Gold/Amber hint
+    borderColor: 'rgba(245, 158, 11, 0.3)',
   },
   dailyChallengeCardCompleted: {
     borderColor: 'rgba(16, 185, 129, 0.5)', // Green hint
@@ -478,7 +459,6 @@ const styles = StyleSheet.create({
   arrowBgCompleted: {
     backgroundColor: 'rgba(16, 185, 129, 0.3)',
   },
-  // FILTERS
   filtersContainer: {
     gap: 12,
     marginBottom: 24,
@@ -517,7 +497,6 @@ const styles = StyleSheet.create({
     color: GLASS.accent,
     fontSize: 14,
   },
-  // EVENT CARD (Custom Dark)
   eventCard: {
     backgroundColor: 'rgba(30, 41, 59, 0.4)',
     borderRadius: 24,
@@ -566,7 +545,6 @@ const styles = StyleSheet.create({
     color: GLASS.textSecondary,
     fontSize: 13,
   },
-  // LOADING / EMPTY
   loadingContainer: {
     alignItems: 'center',
     padding: 40,
@@ -589,7 +567,6 @@ const styles = StyleSheet.create({
     color: GLASS.textSecondary,
     textAlign: 'center',
   },
-  // MODAL
   modalOverlay: {
     flex: 1,
     justifyContent: 'flex-start',

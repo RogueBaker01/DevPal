@@ -7,7 +7,6 @@ import { EventsService } from '@/services/eventsService';
 import { BlurView } from "expo-blur";
 import { ActiveHeader } from "@/app/components/ActiveHeader";
 
-// New Glass Tokens
 const GLASS = {
   bg: 'rgba(30, 41, 59, 0.7)',
   border: 'rgba(255, 255, 255, 0.1)',
@@ -71,18 +70,15 @@ export default function SavedScreen() {
     <View style={styles.container}>
       <StatusBar style="light" />
 
-      {/* Decorative Background */}
       <View style={styles.bgGradient} />
       <View style={styles.bgCircle1} />
       <View style={styles.bgCircle2} />
 
-      {/* Floating Glass Header */}
       <ActiveHeader
         userAvatarUrl={userAvatarUrl}
         onAccountPress={() => setShowAccountMenu(true)}
       />
 
-      {/* Content */}
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -159,7 +155,6 @@ export default function SavedScreen() {
         )}
       </ScrollView>
 
-      {/* Account Dropdown Modal */}
       <Modal
         visible={showAccountMenu}
         transparent
@@ -192,7 +187,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#0F172A',
   },
-  // BACKGROUND
   bgGradient: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: '#0F172A',
@@ -217,14 +211,9 @@ const styles = StyleSheet.create({
     bottom: 200,
     left: -100,
   },
-  // HEADER
   scrollView: {
     flex: 1,
-    marginTop: 0, // Header is now part of flow or we rely on padding? ActiveHeader is transparent
-    // Wait, ActiveHeader in Home was: paddingBottom: 20 etc. 
-    // In Home it was "borderBottomWidth:1".
-    // In Saved it was "position: absolute".
-    // Let's adjust ScrollView margin to 0 for now and check if we need padding.
+    marginTop: 0,
   },
   scrollContent: {
     padding: 20,
@@ -236,7 +225,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 20,
   },
-  // CARD
   eventCard: {
     backgroundColor: 'rgba(30, 41, 59, 0.4)',
     borderRadius: 16,
@@ -314,7 +302,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 14,
   },
-  // STATES
   loadingContainer: {
     alignItems: 'center',
     padding: 20
@@ -337,7 +324,6 @@ const styles = StyleSheet.create({
     color: GLASS.textSecondary,
     marginTop: 16,
   },
-  // MODAL
   modalOverlay: {
     flex: 1,
     justifyContent: 'flex-start',

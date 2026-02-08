@@ -42,7 +42,6 @@ export function ProgressCircle({
     return (
         <View style={[styles.container, { width: size, height: size }]}>
             <Svg width={size} height={size}>
-                {/* Background circle */}
                 <Circle
                     cx={size / 2}
                     cy={size / 2}
@@ -52,7 +51,6 @@ export function ProgressCircle({
                     fill="none"
                 />
 
-                {/* Progress circle */}
                 <AnimatedCircle
                     cx={size / 2}
                     cy={size / 2}

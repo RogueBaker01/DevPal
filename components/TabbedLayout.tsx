@@ -29,7 +29,6 @@ export function TabbedLayout({ tabs }: TabbedLayoutProps) {
         }).start();
     };
 
-    // Calcular la posición basado en el ancho real
     const tabWidth = containerWidth / tabs.length;
 
     const translateX = animation.interpolate({
@@ -39,7 +38,6 @@ export function TabbedLayout({ tabs }: TabbedLayoutProps) {
 
     return (
         <View style={styles.container}>
-            {/* Tab Headers */}
             <View
                 style={styles.tabBar}
                 onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width)}
@@ -62,7 +60,6 @@ export function TabbedLayout({ tabs }: TabbedLayoutProps) {
                     </Pressable>
                 ))}
 
-                {/* Animated Indicator */}
                 {containerWidth > 0 && (
                     <Animated.View
                         style={[
@@ -76,7 +73,6 @@ export function TabbedLayout({ tabs }: TabbedLayoutProps) {
                 )}
             </View>
 
-            {/* Tab Content */}
             <View style={styles.contentContainer}>
                 {tabs[activeIndex].content}
             </View>
@@ -102,7 +98,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     tabActive: {
-        // Active state styling handled by indicator
     },
     tabText: {
         fontSize: TYPOGRAPHY.sizes.base,

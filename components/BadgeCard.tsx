@@ -47,7 +47,7 @@ export function BadgeCard({
             styles.card,
             !desbloqueado && styles.cardLocked
         ]}>
-            {/* Icon Badge */}
+
             <View style={[
                 styles.iconContainer,
                 { backgroundColor: color + '20', borderColor: color }
@@ -59,17 +59,14 @@ export function BadgeCard({
                 />
             </View>
 
-            {/* Badge Info */}
             <View style={styles.infoContainer}>
                 <Text style={styles.nombre} numberOfLines={1}>{nombre}</Text>
                 <Text style={styles.descripcion} numberOfLines={2}>{descripcion}</Text>
 
-                {/* Rareza Badge */}
                 <View style={[styles.rarezaBadge, getRarezaStyle()]}>
                     <Text style={styles.rarezaText}>{rareza}</Text>
                 </View>
 
-                {/* XP Bonus (si está desbloqueado) */}
                 {desbloqueado && xp_bonus && xp_bonus > 0 && (
                     <View style={styles.xpBonus}>
                         <Ionicons name="star" size={12} color={COLORS.warning} />
@@ -77,7 +74,6 @@ export function BadgeCard({
                     </View>
                 )}
 
-                {/* Barra de progreso (si no está desbloqueado) */}
                 {!desbloqueado && progreso_total > 0 && (
                     <View style={styles.progressContainer}>
                         <View style={styles.progressBar}>
@@ -95,7 +91,6 @@ export function BadgeCard({
                 )}
             </View>
 
-            {/* Lock Icon (si no está desbloqueado) */}
             {!desbloqueado && (
                 <View style={styles.lockContainer}>
                     <Ionicons name="lock-closed" size={20} color={COLORS.textTertiary} />

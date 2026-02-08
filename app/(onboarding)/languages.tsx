@@ -16,7 +16,6 @@ import { useAuth } from '@/contexts/AuthContext';
 
 const { width } = Dimensions.get('window');
 
-// Glass UI tokens (matching interests.tsx)
 const GLASS = {
   bg: 'rgba(30, 41, 59, 0.7)',
   bgDark: '#0F172A',
@@ -29,7 +28,6 @@ const GLASS = {
   cardBg: 'rgba(30, 41, 59, 0.6)',
 };
 
-// Programming languages with colors
 const LANGUAGES = [
   { id: 'javascript', title: 'JavaScript', bgColor: '#F7DF1E', textColor: '#000' },
   { id: 'python', title: 'Python', bgColor: '#3776AB', textColor: '#FFF' },
@@ -39,10 +37,6 @@ const LANGUAGES = [
   { id: 'csharp', title: 'C#', bgColor: '#512BD4', textColor: '#FFF' },
 ];
 
-/**
- * Languages Selection Screen - Glass UI Dark Theme
- * Matching style with interests.tsx
- */
 export default function LanguagesScreen() {
   const router = useRouter();
   const { completeOnboarding } = useAuth();
@@ -81,7 +75,6 @@ export default function LanguagesScreen() {
     <View style={styles.container}>
       <StatusBar style="light" />
       
-      {/* Background decorations */}
       <View style={styles.bgCircle1} />
       <View style={styles.bgCircle2} />
       <View style={styles.bgCircle3} />
@@ -91,7 +84,6 @@ export default function LanguagesScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Header Section */}
         <View style={styles.headerSection}>
           <Image
             source={require('@/assets/images/devpal-mascot.png')}
@@ -99,7 +91,6 @@ export default function LanguagesScreen() {
             resizeMode="contain"
           />
           
-          {/* Progress indicator */}
           <View style={styles.progressContainer}>
             <View style={[styles.progressDot, styles.progressDotInactive]} />
             <View style={styles.progressDot} />
@@ -112,9 +103,7 @@ export default function LanguagesScreen() {
           </Text>
         </View>
         
-        {/* Glass Card Container */}
         <View style={styles.glassCard}>
-          {/* Grid of language cards */}
           <View style={styles.grid}>
             {LANGUAGES.map((lang) => {
               const isSelected = selectedLanguages.includes(lang.id);
@@ -127,7 +116,6 @@ export default function LanguagesScreen() {
                     isSelected && styles.langCardSelected,
                   ]}
                 >
-                  {/* Language symbol */}
                   <View style={[styles.langIcon, { backgroundColor: lang.bgColor }]}>
                     <Text style={[styles.langSymbol, { color: lang.textColor }]}>
                       {getLangSymbol(lang.id)}
@@ -136,7 +124,6 @@ export default function LanguagesScreen() {
                   
                   <Text style={styles.cardTitle}>{lang.title}</Text>
                   
-                  {/* Selection indicator */}
                   {isSelected && (
                     <View style={styles.checkmark}>
                       <Ionicons name="checkmark" size={14} color={GLASS.bgDark} />
@@ -147,7 +134,6 @@ export default function LanguagesScreen() {
             })}
           </View>
           
-          {/* Custom input */}
           <View style={styles.customInputContainer}>
             <TextInput
               placeholder="Otro lenguaje (escribe aquí)"
@@ -158,7 +144,6 @@ export default function LanguagesScreen() {
             />
           </View>
           
-          {/* Selection count */}
           <View style={styles.selectionInfo}>
             <Ionicons name="information-circle-outline" size={18} color={GLASS.textSecondary} />
             <Text style={styles.selectionText}>
@@ -170,7 +155,6 @@ export default function LanguagesScreen() {
           </View>
         </View>
         
-        {/* Action Buttons */}
         <View style={styles.buttonsContainer}>
           <Pressable 
             onPress={handleComplete}

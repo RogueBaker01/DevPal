@@ -1,26 +1,17 @@
-/**
- * DevPal Design System - Modern UI Tokens
- * Minimalist tech aesthetic with vibrant accents
- */
-
 export const COLORS = {
-    // Backgrounds
     background: '#F9FAFB',
     backgroundLight: '#FFFFFF',
     backgroundDark: '#F3F4F6',
 
-    // Primary - Vibrant Blue
     primary: '#0066FF',
     primaryLight: '#3385FF',
     primaryDark: '#0052CC',
     primaryAlpha: 'rgba(0, 102, 255, 0.1)',
 
-    // Accent
     accent: '#00D4FF',
     accentLight: '#33DDFF',
     accentDark: '#00AACC',
 
-    // Neutrals
     gray50: '#F9FAFB',
     gray100: '#F3F4F6',
     gray200: '#E5E7EB',
@@ -32,32 +23,27 @@ export const COLORS = {
     gray800: '#1F2937',
     gray900: '#111827',
 
-    // Semantic
     success: '#10B981',
     warning: '#F59E0B',
     error: '#EF4444',
     info: '#3B82F6',
 
-    // Text
     textPrimary: '#111827',
     textSecondary: '#6B7280',
     textTertiary: '#9CA3AF',
     textInverse: '#FFFFFF',
 
-    // Overlay
     overlay: 'rgba(0, 0, 0, 0.5)',
     overlayLight: 'rgba(0, 0, 0, 0.3)',
 };
 
 export const TYPOGRAPHY = {
-    // Font Weights
     weights: {
         regular: '400' as const,
         semibold: '600' as const,
         bold: '800' as const,
     },
 
-    // Font Sizes
     sizes: {
         xs: 12,
         sm: 14,
@@ -69,7 +55,6 @@ export const TYPOGRAPHY = {
         '4xl': 36,
     },
 
-    // Line Heights
     lineHeights: {
         tight: 1.2,
         normal: 1.5,
@@ -124,12 +109,10 @@ export const SHADOWS = {
 };
 
 export const ANIMATION = {
-    // Duration (ms)
     fast: 150,
     normal: 250,
     slow: 350,
 
-    // Easing
     easing: {
         ease: 'ease',
         easeIn: 'ease-in',
@@ -140,13 +123,11 @@ export const ANIMATION = {
 };
 
 export const LAYOUT = {
-    // Container max widths
     containerSm: 640,
     containerMd: 768,
     containerLg: 1024,
     containerXl: 1280,
 
-    // Header heights
     headerHeight: 100,
     tabBarHeight: 80,
 };

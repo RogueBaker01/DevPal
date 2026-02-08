@@ -28,29 +28,22 @@ import { LanguageSelector } from "@/components/LanguageSelector";
 import { HapticManager } from "@/utils/HapticManager";
 import { COLORS, RADIUS, SPACING, TYPOGRAPHY, SHADOWS } from "@/constants/designTokens";
 
-/**
- * Challenges Screen - Mobile-Optimized Redesign
- * Tab-based layout with code editor and AI review integration
- */
 export default function ChallengesScreen() {
     const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [challenge, setChallenge] = useState<any>(null);
     const [submitting, setSubmitting] = useState(false);
 
-    // Code editor state
     const [code, setCode] = useState("");
     const [selectedLanguage, setSelectedLanguage] = useState<string>("python");
     const [showAIReview, setShowAIReview] = useState(false);
     const [review, setReview] = useState<any>(null);
     const [reviewing, setReviewing] = useState(false);
 
-    // Code execution state
     const [executing, setExecuting] = useState(false);
     const [showResults, setShowResults] = useState(false);
     const [executionResults, setExecutionResults] = useState<any>(null);
 
-    // Tab animation
     const [activeTab, setActiveTab] = useState(0);
     const indicatorPosition = useRef(new Animated.Value(0)).current;
 
@@ -59,11 +52,9 @@ export default function ChallengesScreen() {
             setLoading(true);
             const data = await ChallengesService.getToday();
             setChallenge(data);
-            // Initialize language and code template
             const recommendedLang = data.lenguaje_recomendado || "python";
             setSelectedLanguage(recommendedLang);
 
-            // Get template for recommended language
             const templates = data.templates_lenguajes || {};
             const template = templates[recommendedLang] || "// Tu código aquí";
             setCode(template);
@@ -160,7 +151,6 @@ export default function ChallengesScreen() {
                 setReview(data.review);
                 setShowAIReview(true);
             } else if (data.review) {
-                // Handle fallback review (when AI is unavailable)
                 setReview(data.review);
                 setShowAIReview(true);
             } else {
@@ -225,7 +215,6 @@ export default function ChallengesScreen() {
         );
     }
 
-    // Show completed banner if challenge is already done
     if (challenge.estado === "completado") {
         return (
             <View style={styles.container}>
@@ -258,7 +247,6 @@ export default function ChallengesScreen() {
         );
     }
 
-    // Problem Tab Content
     const problemTab = (
         <ScrollView
             style={styles.tabContent}
@@ -350,11 +338,9 @@ export default function ChallengesScreen() {
         </ScrollView>
     );
 
-    // Editor Tab Content
     const editorTab = (
         <View style={styles.editorTab}>
             <View style={styles.editorContainer}>
-                {/* CodeEditor component would need to be updated to support dark mode props or style injection */}
                 <CodeEditor
                     code={code}
                     onCodeChange={setCode}
@@ -448,7 +434,6 @@ export default function ChallengesScreen() {
     );
 }
 
-// GLASS Tokens
 const GLASS = {
     bg: 'rgba(30, 41, 59, 0.7)',
     border: 'rgba(255, 255, 255, 0.1)',
@@ -510,7 +495,6 @@ const styles = StyleSheet.create({
     loadingText: { color: GLASS.textSecondary },
     errorText: { color: GLASS.textSecondary, marginTop: 16 },
 
-    // Completed banner styles
     completedBanner: {
         alignItems: 'center',
         padding: 32,

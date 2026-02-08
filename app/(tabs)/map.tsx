@@ -7,7 +7,6 @@ import MapView, { MapMarker } from "@/components/MapView";
 import { EventsService } from "@/services/eventsService";
 import { BlurView } from "expo-blur";
 
-// New Glass Tokens
 const GLASS = {
   bg: 'rgba(30, 41, 59, 0.7)',
   border: 'rgba(255, 255, 255, 0.1)',
@@ -17,7 +16,6 @@ const GLASS = {
   inputBg: 'rgba(15, 23, 42, 0.6)',
 };
 
-// Default region
 const DEFAULT_REGION = {
   latitude: 20.5888,
   longitude: -100.3899,
@@ -52,7 +50,6 @@ export default function MapScreen() {
     }
   };
 
-  // Effect to handle deep linking or initial selection
   useEffect(() => {
     if (id && events.length > 0) {
       const targetEvent = events.find(e => e.id === id);
@@ -73,7 +70,6 @@ export default function MapScreen() {
     try {
       setLoading(true);
       const data = await EventsService.getAll(undefined, 100);
-      // Filter events that have valid coordinates
       const mapEvents = data.filter((e: any) =>
         e.latitud && e.longitud &&
         !isNaN(parseFloat(e.latitud)) && !isNaN(parseFloat(e.longitud)) &&
@@ -104,7 +100,6 @@ export default function MapScreen() {
     <View style={styles.container}>
       <StatusBar style="light" />
 
-      {/* Floating Glass Header */}
       <BlurView intensity={30} tint="dark" style={styles.headerGlass}>
         <View style={styles.searchRow}>
           <Image
@@ -132,7 +127,6 @@ export default function MapScreen() {
         </View>
       </BlurView>
 
-      {/* Map area */}
       <View style={styles.mapContainer}>
         {loading ? (
           <View style={styles.loadingContainer}>
@@ -144,7 +138,6 @@ export default function MapScreen() {
             ref={mapRef}
             style={styles.map}
             initialRegion={DEFAULT_REGION}
-          // Optional: Use a dark map style JSON here if available
           >
             {events.map((event) => (
               <MapMarker
@@ -167,7 +160,6 @@ export default function MapScreen() {
         )}
       </View>
 
-      {/* Event Modal (Bottom Sheet Style) */}
       {selectedEvent && (
         <BlurView intensity={80} tint="dark" style={styles.eventModal}>
           <View style={styles.eventModalContent}>
@@ -200,7 +192,6 @@ export default function MapScreen() {
         </BlurView>
       )}
 
-      {/* Account Dropdown Modal */}
       <Modal
         visible={showAccountMenu}
         transparent
@@ -247,7 +238,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#0F172A',
   },
-  // FLOATING HEADER
   headerGlass: {
     position: 'absolute',
     top: 50,
@@ -298,7 +288,6 @@ const styles = StyleSheet.create({
     height: 32,
     borderRadius: 16,
   },
-  // MAP
   mapContainer: {
     flex: 1,
     backgroundColor: '#0F172A',
@@ -316,7 +305,6 @@ const styles = StyleSheet.create({
     marginTop: 10,
     color: GLASS.textSecondary,
   },
-  // PINS
   pin: {
     backgroundColor: GLASS.accent,
     width: 36,
@@ -332,22 +320,21 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
   },
   pinSelected: {
-    backgroundColor: '#F59E0B', // Amber for selection
+    backgroundColor: '#F59E0B',
     transform: [{ scale: 1.25 }],
     zIndex: 10,
     borderColor: '#FFF',
   },
-  // EVENT MODAL
   eventModal: {
     position: 'absolute',
-    bottom: 110, // Above tab bar
+    bottom: 110,
     left: 20,
     right: 20,
     borderRadius: 24,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: GLASS.border,
-    padding: 4, // Padding for inner content
+    padding: 4,
   },
   eventModalContent: {
     flexDirection: 'row',
@@ -403,7 +390,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
   },
-  // DROPDOWN
   modalOverlay: {
     flex: 1,
     justifyContent: 'flex-start',

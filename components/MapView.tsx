@@ -2,7 +2,6 @@ import Colors from "@/constants/Colors";
 import React from "react";
 import { Platform, StyleSheet, Text, View } from "react-native";
 
-// Interface for props compatible with both implementations
 interface MapViewProps {
   style?: any;
   initialRegion?: {
@@ -32,7 +31,6 @@ interface MarkerProps {
   children?: React.ReactNode;
 }
 
-// Native implementation imports
 let NativeMap: any = null;
 let NativeMarker: any = null;
 let PROVIDER_GOOGLE: any = null;
@@ -48,14 +46,11 @@ if (Platform.OS !== "web") {
   }
 }
 
-// Web implementation
 const WebMap = (props: MapViewProps) => {
-  // Simple check for mounting
   const [isMounted, setIsMounted] = React.useState(false);
 
   React.useEffect(() => {
     setIsMounted(true);
-    // Inject Leaflet CSS
     if (Platform.OS === "web") {
       const link = document.createElement("link");
       link.rel = "stylesheet";
@@ -69,7 +64,6 @@ const WebMap = (props: MapViewProps) => {
       <View style={[props.style, { backgroundColor: Colors.gray[100] }]} />
     );
 
-  // We require react-leaflet dynamically to avoid breaking native build
   let MapContainer, TileLayer;
   try {
     const RL = require("react-leaflet");
@@ -83,7 +77,6 @@ const WebMap = (props: MapViewProps) => {
     );
   }
 
-  // Need to extract lat/lng from initialRegion or region
   const targetRegion = props.region || props.initialRegion;
   const center = targetRegion
     ? [targetRegion.latitude, targetRegion.longitude]
@@ -104,7 +97,6 @@ const WebMap = (props: MapViewProps) => {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         />
-        {/* Render children (Markers) converting them to Web Markers */}
         {React.Children.map(props.children, (child) => {
           if (React.isValidElement(child) && child.type === MapMarker) {
             // @ts-ignore
@@ -119,7 +111,6 @@ const WebMap = (props: MapViewProps) => {
 
 export const MapMarker = (props: MarkerProps & { __isWeb?: boolean }) => {
   if (Platform.OS === "web") {
-    // Web implementation using React Leaflet Marker
     const RL = require("react-leaflet");
     const Marker = RL.Marker;
     const Popup = RL.Popup;
@@ -133,7 +124,6 @@ export const MapMarker = (props: MarkerProps & { __isWeb?: boolean }) => {
           // @ts-ignore
           <Popup>
             <div style={{ minWidth: 100 }}>
-              {/* Simplified popup content */}
               {props.title && <strong>{props.title}</strong>}
               {props.description && <p>{props.description}</p>}
             </div>
@@ -155,7 +145,6 @@ export const MapMarker = (props: MarkerProps & { __isWeb?: boolean }) => {
   );
 };
 
-// Main Component
 const MapView = React.forwardRef((props: MapViewProps, ref: any) => {
   if (Platform.OS === "web") {
     return <WebMap {...props} />;

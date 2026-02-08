@@ -29,23 +29,17 @@ export function EventCardSkeleton() {
 
     return (
         <View style={styles.card}>
-            {/* Imagen placeholder */}
             <Animated.View style={[styles.image, animatedStyle]} />
 
-            {/* Contenido */}
             <View style={styles.content}>
-                {/* Categoría badge */}
                 <Animated.View style={[styles.categoryBadge, animatedStyle]} />
 
-                {/* Título */}
                 <Animated.View style={[styles.title, animatedStyle]} />
                 <Animated.View style={[styles.titleShort, animatedStyle]} />
 
-                {/* Descripción */}
                 <Animated.View style={[styles.description, animatedStyle]} />
                 <Animated.View style={[styles.descriptionShort, animatedStyle]} />
 
-                {/* Footer */}
                 <View style={styles.footer}>
                     <Animated.View style={[styles.date, animatedStyle]} />
                     <Animated.View style={[styles.attendees, animatedStyle]} />

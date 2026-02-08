@@ -16,7 +16,6 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { CodeReviewService } from "@/services/codeReviewService";
 
-// Design tokens
 const COLORS = {
     darkBg: '#0F172A',
     primaryBlue: '#2563EB',
@@ -40,7 +39,6 @@ export default function CodeReviewScreen() {
 
         try {
             setLoading(true);
-            // Detectar lenguaje simple (mejora futura: selector de lenguaje)
             const language = "python";
             const data = await CodeReviewService.submitReview(code, language);
 
@@ -62,7 +60,6 @@ export default function CodeReviewScreen() {
         >
             <StatusBar style="light" />
 
-            {/* Header */}
             <View style={styles.header}>
                 <View style={styles.headerContent}>
                     <Pressable onPress={() => router.back()} style={styles.backButton}>
@@ -101,7 +98,6 @@ export default function CodeReviewScreen() {
                     )}
                 </Pressable>
 
-                {/* Results */}
                 {review && (
                     <View style={styles.resultContainer}>
                         <Text style={styles.resultTitle}>Resultados de la Revisión</Text>

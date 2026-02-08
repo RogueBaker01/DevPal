@@ -59,7 +59,7 @@ async def job_generar_desafios_diarios():
         desafio = await ia_service.generar_desafio_global()
         
         if desafio:
-            logger.info(f"Desafío global del día generado: {desafio.titulo}")
+            logger.info(f"Desafío global del día generado: {desafio['titulo']}")
         else:
             logger.warning("No se pudo generar el desafío global del día")
         

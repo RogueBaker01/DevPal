@@ -6,7 +6,6 @@ export const CodeReviewService = {
     submitReview: async (code: string, language: string) => {
         try {
             const userId = await AsyncStorage.getItem('userId');
-            // Si no hay usuario, usamos un ID temporal o manejamos el error
             const currentUserId = userId || 'temp_user_id';
 
             const response = await api.post(ENDPOINTS.CODE_REVIEW.REVIEW, {

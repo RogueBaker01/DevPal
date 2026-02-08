@@ -1,14 +1,6 @@
-/**
- * Haptic Feedback Utility
- * Wrapper para expo-haptics con fallback seguro
- */
-
 import * as Haptics from 'expo-haptics';
 
 export class HapticManager {
-    /**
-     * Feedback ligero - Para interacciones menores (hover, selección)
-     */
     static light() {
         try {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -17,9 +9,6 @@ export class HapticManager {
         }
     }
 
-    /**
-     * Feedback medio - Para acciones estándar (botones, cambios de estado)
-     */
     static medium() {
         try {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -28,9 +17,6 @@ export class HapticManager {
         }
     }
 
-    /**
-     * Feedback pesado - Para acciones importantes (confirmaciones, errores)
-     */
     static heavy() {
         try {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
@@ -39,9 +25,6 @@ export class HapticManager {
         }
     }
 
-    /**
-     * Selección - Para cambios en pickers o filtros
-     */
     static selection() {
         try {
             Haptics.selectionAsync();
@@ -50,9 +33,6 @@ export class HapticManager {
         }
     }
 
-    /**
-     * Éxito - Feedback positivo
-     */
     static success() {
         try {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -61,9 +41,6 @@ export class HapticManager {
         }
     }
 
-    /**
-     * Advertencia - Feedback de warning
-     */
     static warning() {
         try {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
@@ -72,9 +49,6 @@ export class HapticManager {
         }
     }
 
-    /**
-     * Error - Feedback negativo
-     */
     static error() {
         try {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);

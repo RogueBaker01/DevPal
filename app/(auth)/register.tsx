@@ -20,7 +20,6 @@ import { useAuth } from '@/contexts/AuthContext';
 
 const { width } = Dimensions.get('window');
 
-// Glass UI tokens (matching rest of app)
 const GLASS = {
   bg: 'rgba(30, 41, 59, 0.7)',
   bgDark: '#0F172A',
@@ -34,9 +33,6 @@ const GLASS = {
   errorBg: 'rgba(239, 68, 68, 0.15)',
 };
 
-/**
- * Register Screen - Glass UI Dark Theme
- */
 export default function RegisterScreen() {
   const router = useRouter();
   const { signIn } = useAuth();
@@ -54,7 +50,6 @@ export default function RegisterScreen() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleRegister = async () => {
-    // Validar campos vacios
     if (!formData.nombre.trim() || !formData.apellidos.trim() ||
       !formData.email.trim() || !formData.password.trim() ||
       !formData.confirmPassword.trim()) {
@@ -62,26 +57,22 @@ export default function RegisterScreen() {
       return;
     }
 
-    // Validar email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
       setError('Por favor ingresa un correo valido');
       return;
     }
 
-    // Validar que las contrasenas coincidan
     if (formData.password !== formData.confirmPassword) {
       setError('Las contrasenas no coinciden');
       return;
     }
 
-    // Validar longitud de contrasena
     if (formData.password.length < 6) {
       setError('La contrasena debe tener al menos 6 caracteres');
       return;
     }
 
-    // Validar terminos aceptados
     if (!acceptedTerms) {
       setError('Debes aceptar los terminos y condiciones');
       return;
@@ -99,9 +90,7 @@ export default function RegisterScreen() {
       );
 
       if (response.user_id) {
-        // Actualizar estado global de autenticación (isNewUser: true para ir a onboarding)
         await signIn({ ...response, email: formData.email.trim() }, true, true);
-        // La navegación al onboarding se maneja automáticamente por AuthContext
       } else {
         setError('Error al registrar usuario. Intenta de nuevo.');
       }
@@ -126,7 +115,6 @@ export default function RegisterScreen() {
     <View style={styles.container}>
       <StatusBar style="light" />
 
-      {/* Background decorations */}
       <View style={styles.bgCircle1} />
       <View style={styles.bgCircle2} />
       <View style={styles.bgCircle3} />
@@ -140,7 +128,6 @@ export default function RegisterScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
-          {/* Logo/Mascot Section */}
           <View style={styles.logoSection}>
             <Image
               source={require('@/assets/images/devpal-mascot.png')}
@@ -150,12 +137,10 @@ export default function RegisterScreen() {
             <Text style={styles.brandText}>DevPal</Text>
           </View>
 
-          {/* Glass Card Form */}
           <View style={styles.glassCard}>
             <Text style={styles.title}>Crea tu cuenta</Text>
             <Text style={styles.subtitle}>Unete a la comunidad de desarrolladores</Text>
 
-            {/* Form inputs */}
             <View style={styles.inputsContainer}>
               <View style={styles.rowInputs}>
                 <View style={[styles.inputWrapper, styles.halfInput]}>
@@ -246,7 +231,6 @@ export default function RegisterScreen() {
               </View>
             </View>
 
-            {/* Terms checkbox */}
             <Pressable
               onPress={() => setAcceptedTerms(!acceptedTerms)}
               style={styles.termsContainer}
@@ -259,7 +243,6 @@ export default function RegisterScreen() {
               </Text>
             </Pressable>
 
-            {/* Error message */}
             {error ? (
               <View style={styles.errorContainer}>
                 <Ionicons name="alert-circle" size={18} color={GLASS.error} />
@@ -267,7 +250,6 @@ export default function RegisterScreen() {
               </View>
             ) : null}
 
-            {/* Register button */}
             <Pressable
               onPress={handleRegister}
               style={[styles.registerButton, loading && styles.buttonDisabled]}
@@ -283,14 +265,12 @@ export default function RegisterScreen() {
               )}
             </Pressable>
 
-            {/* Divider */}
             <View style={styles.dividerContainer}>
               <View style={styles.dividerLine} />
               <Text style={styles.dividerText}>o registrate con</Text>
               <View style={styles.dividerLine} />
             </View>
 
-            {/* Social buttons */}
             <View style={styles.socialContainer}>
               <Pressable style={styles.socialButton}>
                 <Text style={styles.googleIcon}>G</Text>
@@ -304,7 +284,6 @@ export default function RegisterScreen() {
             </View>
           </View>
 
-          {/* Login link */}
           <View style={styles.loginLinkContainer}>
             <Text style={styles.loginLinkText}>Ya tienes cuenta? </Text>
             <Pressable onPress={() => router.push('/(auth)/login')}>

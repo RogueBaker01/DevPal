@@ -7,7 +7,6 @@ import { BlurView } from 'expo-blur';
 import { AuthService } from '@/services/authService';
 import { AuthStorage } from '@/utils/AuthStorage';
 
-// GLASS Tokens
 const GLASS = {
     bg: 'rgba(30, 41, 59, 0.7)',
     border: 'rgba(255, 255, 255, 0.1)',
@@ -80,7 +79,6 @@ export default function EditProfileScreen() {
             <View style={styles.bgCircle1} />
             <View style={styles.bgCircle2} />
 
-            {/* Header */}
             <BlurView intensity={30} tint="dark" style={styles.headerGlass}>
                 <Pressable onPress={() => router.back()} style={styles.backButton}>
                     <Ionicons name="arrow-back" size={24} color={GLASS.textPrimary} />

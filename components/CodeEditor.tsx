@@ -11,16 +11,15 @@ interface CodeEditorProps {
     availableLanguages?: string[];
 }
 
-// Syntax highlighting tokens
 const SYNTAX_COLORS = {
-    keyword: '#C678DD',      // purple - if, for, while, def, function, return, etc
-    string: '#98C379',       // green - "string", 'string'
-    number: '#D19A66',       // orange - 123, 45.6
-    comment: '#5C6370',      // gray - # comment, // comment
-    function: '#61AFEF',     // blue - function names
-    operator: '#56B6C2',     // cyan - =, +, -, *, etc
-    bracket: '#E5C07B',      // yellow - (), [], {}
-    default: '#ABB2BF',      // light gray - default text
+    keyword: '#C678DD',
+    string: '#98C379',
+    number: '#D19A66',
+    comment: '#5C6370',
+    function: '#61AFEF',
+    operator: '#56B6C2',
+    bracket: '#E5C07B',
+    default: '#ABB2BF',
 };
 
 const pythonKeywords = ['def', 'return', 'if', 'else', 'elif', 'for', 'while', 'in', 'not', 'and', 'or', 'True', 'False', 'None', 'import', 'from', 'class', 'try', 'except', 'finally', 'with', 'as', 'lambda', 'pass', 'break', 'continue', 'global', 'yield', 'raise', 'assert'];
@@ -36,16 +35,13 @@ function tokenizeLine(line: string, language: string): Token[] {
     const tokens: Token[] = [];
     let remaining = line;
     
-    // Comment check
     const commentChar = language === 'python' ? '#' : '//';
     const commentIndex = remaining.indexOf(commentChar);
     
     if (commentIndex !== -1 && !remaining.substring(0, commentIndex).includes('"') && !remaining.substring(0, commentIndex).includes("'")) {
-        // Process before comment
         if (commentIndex > 0) {
             tokens.push(...tokenizeSegment(remaining.substring(0, commentIndex), keywords));
         }
-        // Add comment
         tokens.push({ text: remaining.substring(commentIndex), color: SYNTAX_COLORS.comment });
         return tokens;
     }
@@ -56,7 +52,6 @@ function tokenizeLine(line: string, language: string): Token[] {
 function tokenizeSegment(segment: string, keywords: string[]): Token[] {
     const tokens: Token[] = [];
     
-    // Regex to split by strings, numbers, words, operators, etc
     const regex = /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|\d+\.?\d*|\w+|[+\-*/%=<>!&|^~]+|[()[\]{}.,;:]|\s+)/g;
     let match;
     
@@ -75,7 +70,6 @@ function tokenizeSegment(segment: string, keywords: string[]): Token[] {
         } else if (/^[+\-*/%=<>!&|^~]+$/.test(text)) {
             color = SYNTAX_COLORS.operator;
         } else if (/^\w+$/.test(text) && !keywords.includes(text)) {
-            // Could be a function call if followed by (
             const nextChar = segment[regex.lastIndex];
             if (nextChar === '(') {
                 color = SYNTAX_COLORS.function;
@@ -100,21 +94,18 @@ export function CodeEditor({
     const lineNumbersRef = useRef<ScrollView>(null);
     const highlightRef = useRef<ScrollView>(null);
 
-    // Memoize highlighted code
     const highlightedLines = useMemo(() => {
         return lines.map(line => tokenizeLine(line, language));
     }, [code, language]);
 
     const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
         const y = event.nativeEvent.contentOffset.y;
-        // Sync line numbers and highlight scroll
         lineNumbersRef.current?.scrollTo({ y, animated: false });
         highlightRef.current?.scrollTo({ y, animated: false });
     }, []);
 
     return (
         <View style={styles.container}>
-            {/* Language Badge */}
             <Pressable
                 style={({ pressed }) => [
                     styles.languageBadge,
@@ -133,7 +124,6 @@ export function CodeEditor({
             </Pressable>
 
             <View style={styles.editorContainer}>
-                {/* Line Numbers */}
                 <ScrollView
                     ref={lineNumbersRef}
                     style={styles.lineNumbers}
@@ -148,9 +138,7 @@ export function CodeEditor({
                     ))}
                 </ScrollView>
 
-                {/* Code Area with overlay approach */}
                 <View style={styles.codeArea}>
-                    {/* Syntax highlighted code (behind) */}
                     <ScrollView
                         ref={highlightRef}
                         style={styles.highlightLayer}
@@ -170,7 +158,6 @@ export function CodeEditor({
                         ))}
                     </ScrollView>
 
-                    {/* Transparent TextInput (front) for editing */}
                     <ScrollView
                         style={styles.inputLayer}
                         contentContainerStyle={styles.codeContent}

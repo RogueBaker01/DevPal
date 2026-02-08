@@ -4,7 +4,6 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 
-// Glass Tokens
 const GLASS = {
     bg: 'rgba(30, 41, 59, 0.7)',
     border: 'rgba(255, 255, 255, 0.1)',

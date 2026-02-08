@@ -48,14 +48,12 @@ export default function EventCard({ event, onPress }: EventCardProps) {
 
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.8}>
-      {/* Left: Icon/Image */}
       <View
         style={[styles.iconContainer, { backgroundColor: getCategoryColor() }]}
       >
         <Text style={styles.categoryIcon}>{getCategoryIcon()}</Text>
       </View>
 
-      {/* Center: Event Info */}
       <View style={styles.infoContainer}>
         <Text style={styles.title} numberOfLines={1}>
           {event.title}
@@ -68,7 +66,6 @@ export default function EventCard({ event, onPress }: EventCardProps) {
         </Text>
       </View>
 
-      {/* Right: Badge */}
       {event.popular && (
         <View style={styles.badge}>
           <Text style={styles.badgeText}>Popular</Text>

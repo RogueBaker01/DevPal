@@ -5,7 +5,6 @@ import { StatusBar } from 'expo-status-bar';
 
 const { width, height } = Dimensions.get('window');
 
-// Design tokens
 const COLORS = {
   darkBg: '#0F172A',
   primaryBlue: '#2563EB',
@@ -16,10 +15,6 @@ const COLORS = {
   bubble3: 'rgba(96, 165, 250, 0.25)',
 };
 
-/**
- * Welcome Screen (Inicio)
- * Dark blue background with decorative bubbles, mascot, and auth buttons
- */
 export default function WelcomeScreen() {
   const router = useRouter();
 
@@ -27,7 +22,6 @@ export default function WelcomeScreen() {
     <View style={styles.container}>
       <StatusBar style="light" />
       
-      {/* Background decoration bubbles */}
       <View style={styles.bubblesContainer}>
         <View style={[styles.bubble, styles.bubble1]} />
         <View style={[styles.bubble, styles.bubble2]} />
@@ -36,9 +30,7 @@ export default function WelcomeScreen() {
         <View style={[styles.bubble, styles.bubble5]} />
       </View>
       
-      {/* Content container */}
       <View style={styles.contentContainer}>
-        {/* Mascot Robot */}
         <View style={styles.mascotContainer}>
           <Image
             source={require('@/assets/images/devpal-mascot.png')}
@@ -47,7 +39,6 @@ export default function WelcomeScreen() {
           />
         </View>
         
-        {/* Welcome text */}
         <Text style={styles.welcomeText}>
           Bienvenido de regreso
         </Text>
@@ -56,9 +47,7 @@ export default function WelcomeScreen() {
         </Text>
       </View>
       
-      {/* Bottom buttons container */}
       <View style={styles.buttonsContainer}>
-        {/* Primary button - Iniciar sesión */}
         <Pressable 
           onPress={() => router.push('/(auth)/login')}
           style={({ pressed }) => [
@@ -71,7 +60,6 @@ export default function WelcomeScreen() {
           </Text>
         </Pressable>
         
-        {/* Secondary button - Registrarse */}
         <Pressable 
           onPress={() => router.push('/(auth)/register')}
           style={({ pressed }) => [

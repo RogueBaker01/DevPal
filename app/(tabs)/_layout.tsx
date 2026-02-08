@@ -4,17 +4,12 @@ import { View, Image, StyleSheet, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 
-// Design tokens
 const COLORS = {
-  activeTint: '#22D3EE',    // Cian Eléctrico Brillante
-  inactiveTint: '#94A3B8',  // Gris neutro
+  activeTint: '#22D3EE',
+  inactiveTint: '#94A3B8',
   dotColor: '#22D3EE',
 };
 
-/**
- * Tab Layout - Floating Glassmorphism
- * Uses expo-blur for real-time backdrop blur.
- */
 export default function TabLayout() {
   return (
     <Tabs
@@ -41,9 +36,7 @@ export default function TabLayout() {
         tabBarItemStyle: {
           height: 70,
           padding: 0,
-          // Eliminamos cualquier padding/margin default
         },
-        // Integración de Glassmorphism
         tabBarBackground: () => (
           <BlurView
             intensity={80}
@@ -131,7 +124,6 @@ export default function TabLayout() {
         }}
       />
 
-      {/* Hidden screens */}
       <Tabs.Screen name="chat" options={{ href: null }} />
     </Tabs>
   );

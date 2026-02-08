@@ -29,13 +29,10 @@ export function LeaderboardCardSkeleton() {
 
     return (
         <View style={styles.card}>
-            {/* Ranking badge */}
             <Animated.View style={[styles.ranking, animatedStyle]} />
 
-            {/* Avatar */}
             <Animated.View style={[styles.avatar, animatedStyle]} />
 
-            {/* User info */}
             <View style={styles.userInfo}>
                 <Animated.View style={[styles.name, animatedStyle]} />
                 <View style={styles.stats}>

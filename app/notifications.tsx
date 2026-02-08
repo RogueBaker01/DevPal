@@ -6,7 +6,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { AuthService } from '@/services/authService';
 
-// GLASS Tokens
 const GLASS = {
   bg: 'rgba(30, 41, 59, 0.7)',
   border: 'rgba(255, 255, 255, 0.1)',
@@ -63,12 +62,10 @@ export default function NotificationsScreen() {
     <View style={styles.container}>
       <StatusBar style="light" />
 
-      {/* Background Decorativo */}
       <View style={styles.bgGradient} />
       <View style={styles.bgCircle1} />
       <View style={styles.bgCircle2} />
 
-      {/* Glass Header */}
       <BlurView intensity={30} tint="dark" style={styles.header}>
         <Pressable
           onPress={() => router.back()}
@@ -80,7 +77,6 @@ export default function NotificationsScreen() {
         <View style={styles.placeholder} />
       </BlurView>
 
-      {/* Content */}
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -128,7 +124,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#0F172A',
   },
-  // FONDOS DECORATIVOS
   bgGradient: { ...StyleSheet.absoluteFillObject, backgroundColor: '#0F172A' },
   bgCircle1: { position: 'absolute', width: 300, height: 300, borderRadius: 150, backgroundColor: '#2563EB', opacity: 0.15, top: -50, right: -50 },
   bgCircle2: { position: 'absolute', width: 250, height: 250, borderRadius: 125, backgroundColor: '#22D3EE', opacity: 0.1, bottom: 100, left: -80 },

@@ -6,7 +6,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { EventsService } from '@/services/eventsService';
 
-// GLASS Tokens (Matching Profile/Settings)
 const GLASS = {
   bg: 'rgba(30, 41, 59, 0.7)',
   border: 'rgba(255, 255, 255, 0.1)',
@@ -16,12 +15,10 @@ const GLASS = {
   inputBg: 'rgba(15, 23, 42, 0.6)',
 };
 
-// Recent searches
 const RECENT_SEARCHES = [
   { id: '1', title: 'Peña de Bernal', subtitle: '21 de Noviembre - 300 personas' },
 ];
 
-// Suggested searches
 const SUGGESTIONS = [
   'Por la mera',
   'Descubre que hay a tu alrededor',
@@ -36,7 +33,6 @@ export default function SearchScreen() {
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
-  // Filter events based on search query
   const filteredEvents = events.filter((event) => {
     if (!searchQuery.trim()) return true;
     const query = searchQuery.toLowerCase().trim();
@@ -47,7 +43,6 @@ export default function SearchScreen() {
     return titulo.includes(query) || descripcion.includes(query) || categoria.includes(query) || ubicacion.includes(query);
   });
 
-  // Load events from API
   useEffect(() => {
     loadEvents();
   }, [selectedCategory]);
@@ -70,19 +65,16 @@ export default function SearchScreen() {
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
-      {/* Background Decorativo */}
       <View style={styles.bgGradient} />
       <View style={styles.bgCircle1} />
       <View style={styles.bgCircle2} />
 
-      {/* Glass Header */}
       <BlurView intensity={30} tint="dark" style={styles.header}>
         <View style={styles.searchRow}>
           <Pressable onPress={() => router.back()} style={styles.iconButton}>
             <Ionicons name="arrow-back" size={24} color={GLASS.textPrimary} />
           </Pressable>
 
-          {/* Search input - Glass */}
           <View style={styles.searchContainer}>
             <Ionicons name="search" size={20} color={GLASS.textSecondary} style={{ marginRight: 8 }} />
             <TextInput
@@ -107,20 +99,16 @@ export default function SearchScreen() {
             )}
           </View>
 
-          {/* Icons */}
           <Pressable style={styles.iconButton} onPress={navigateToNotifications}>
             <Ionicons name="notifications-outline" size={24} color={GLASS.textPrimary} />
           </Pressable>
         </View>
 
-        {/* Search Dropdown */}
         {showDropdown && (
           <View style={styles.dropdown}>
             <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFill} />
-            {/* Recent searches header */}
             <Text style={styles.dropdownHeader}>Búsquedas recientes</Text>
 
-            {/* Recent search items */}
             {RECENT_SEARCHES.map((item) => (
               <Pressable
                 key={item.id}
@@ -140,10 +128,8 @@ export default function SearchScreen() {
               </Pressable>
             ))}
 
-            {/* Suggestions header */}
             <Text style={styles.dropdownHeader}>Sugerencias de búsqueda</Text>
 
-            {/* Suggestion items */}
             {SUGGESTIONS.map((suggestion, index) => (
               <Pressable
                 key={index}
@@ -163,13 +149,11 @@ export default function SearchScreen() {
         )}
       </BlurView>
 
-      {/* Content */}
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Filter pills */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 24, marginTop: 10 }} contentContainerStyle={{ paddingHorizontal: 20, gap: 12 }}>
           {['Hackathon', 'Conferencia', 'Taller', 'Meetup'].map((cat) => (
             <Pressable
@@ -187,12 +171,10 @@ export default function SearchScreen() {
           ))}
         </ScrollView>
 
-        {/* Próximos eventos section */}
         <Text style={styles.sectionTitle}>
           Próximos eventos
         </Text>
 
-        {/* Event cards */}
         {loading ? (
           <View style={{ padding: 40, alignItems: 'center' }}>
             <ActivityIndicator size="large" color={GLASS.accent} />
@@ -240,7 +222,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#0F172A',
   },
-  // FONDOS DECORATIVOS
   bgGradient: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: '#0F172A',

@@ -61,7 +61,6 @@ export function TestResultsBottomSheet({ visible, onClose, results }: TestResult
             <View style={styles.backdrop}>
                 <Pressable style={styles.backdropTouchable} onPress={onClose} />
                 <View style={styles.sheet}>
-                    {/* Drag Handle */}
                     <Pressable onPress={onClose} style={styles.dragHandleArea}>
                         <View style={styles.dragHandle} />
                     </Pressable>
@@ -72,7 +71,6 @@ export function TestResultsBottomSheet({ visible, onClose, results }: TestResult
                         showsVerticalScrollIndicator={true}
                         bounces={true}
                     >
-                        {/* Header */}
                         <View style={styles.header}>
                             <Text style={styles.title}>Resultados de Ejecución</Text>
                             <Pressable onPress={onClose} style={styles.closeButton}>
@@ -80,7 +78,6 @@ export function TestResultsBottomSheet({ visible, onClose, results }: TestResult
                             </Pressable>
                         </View>
 
-                        {/* Summary Card */}
                         <View style={[styles.summaryCard, { borderLeftColor: statusColor }]}>
                             <Ionicons name={statusIcon} size={32} color={statusColor} />
                             <View style={styles.summaryInfo}>
@@ -91,7 +88,6 @@ export function TestResultsBottomSheet({ visible, onClose, results }: TestResult
                                     {results.casos_pasados}/{results.casos_totales} casos de prueba
                                 </Text>
                             </View>
-                            {/* Progress indicator */}
                             <View style={styles.progressContainer}>
                                 <View style={styles.progressBg}>
                                     <View 
@@ -107,7 +103,6 @@ export function TestResultsBottomSheet({ visible, onClose, results }: TestResult
                             </View>
                         </View>
 
-                        {/* Compilation Error */}
                         {results.error_compilacion && (
                             <View style={styles.errorSection}>
                                 <View style={styles.sectionHeader}>
@@ -122,7 +117,6 @@ export function TestResultsBottomSheet({ visible, onClose, results }: TestResult
                             </View>
                         )}
 
-                        {/* Test Cases List */}
                         {results.casos_detalle && results.casos_detalle.length > 0 && (
                             <View style={styles.section}>
                                 <View style={styles.sectionHeader}>
@@ -149,7 +143,6 @@ function TestCaseCard({ testCase }: { testCase: TestCase }) {
 
     return (
         <View style={[styles.testCaseCard, { borderLeftColor: borderColor }]}>
-            {/* Header */}
             <View style={styles.testCaseHeader}>
                 <View style={styles.testCaseTitle}>
                     <Ionicons 
@@ -164,7 +157,6 @@ function TestCaseCard({ testCase }: { testCase: TestCase }) {
                 </Text>
             </View>
 
-            {/* Input */}
             <View style={styles.testCaseRow}>
                 <Text style={styles.testCaseLabel}>Entrada:</Text>
                 <View style={styles.codeBlock}>
@@ -172,7 +164,6 @@ function TestCaseCard({ testCase }: { testCase: TestCase }) {
                 </View>
             </View>
 
-            {/* Expected Output */}
             <View style={styles.testCaseRow}>
                 <Text style={styles.testCaseLabel}>Salida esperada:</Text>
                 <View style={styles.codeBlock}>
@@ -180,7 +171,6 @@ function TestCaseCard({ testCase }: { testCase: TestCase }) {
                 </View>
             </View>
 
-            {/* Actual Output */}
             <View style={styles.testCaseRow}>
                 <Text style={styles.testCaseLabel}>Salida obtenida:</Text>
                 <View style={[
@@ -196,7 +186,6 @@ function TestCaseCard({ testCase }: { testCase: TestCase }) {
                 </View>
             </View>
 
-            {/* Error message */}
             {testCase.error && (
                 <View style={styles.testCaseRow}>
                     <Text style={styles.testCaseLabel}>Error:</Text>
@@ -258,7 +247,6 @@ const styles = StyleSheet.create({
         padding: SPACING.sm,
     },
     
-    // Summary Card
     summaryCard: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -295,7 +283,6 @@ const styles = StyleSheet.create({
         borderRadius: RADIUS.sm,
     },
 
-    // Sections
     section: {
         marginBottom: SPACING.lg,
     },
@@ -311,7 +298,6 @@ const styles = StyleSheet.create({
         color: COLORS.textPrimary,
     },
 
-    // Error Section
     errorSection: {
         marginBottom: SPACING.xl,
     },
@@ -329,7 +315,6 @@ const styles = StyleSheet.create({
         lineHeight: 20,
     },
 
-    // Test Case Card
     testCaseCard: {
         backgroundColor: COLORS.gray50,
         borderRadius: RADIUS.md,
@@ -367,7 +352,6 @@ const styles = StyleSheet.create({
         fontWeight: TYPOGRAPHY.weights.semibold,
     },
 
-    // Code Block
     codeBlock: {
         backgroundColor: COLORS.gray900,
         borderRadius: RADIUS.sm,

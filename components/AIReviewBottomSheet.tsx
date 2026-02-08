@@ -7,7 +7,6 @@ interface AIReviewBottomSheetProps {
     visible: boolean;
     onClose: () => void;
     review: {
-        // Backend fields
         resumen_ejecutivo?: string;
         puntos_fuertes_json?: string[];
         oportunidades_mejora_json?: string[];
@@ -16,7 +15,6 @@ interface AIReviewBottomSheetProps {
             explicacion?: string;
         };
         pista_conceptual?: string;
-        // Legacy fields (fallback)
         calidad_codigo?: number;
         comentarios?: string;
         sugerencias_optimizacion?: string;
@@ -27,7 +25,6 @@ interface AIReviewBottomSheetProps {
 export function AIReviewBottomSheet({ visible, onClose, review }: AIReviewBottomSheetProps) {
     if (!review) return null;
 
-    // Map fields from backend format
     const resumen = review.resumen_ejecutivo || review.comentarios || 'Sin análisis disponible';
     const puntosFuertes = review.puntos_fuertes_json || [];
     const oportunidades = review.oportunidades_mejora_json || [];
@@ -35,7 +32,6 @@ export function AIReviewBottomSheet({ visible, onClose, review }: AIReviewBottom
     const pista = review.pista_conceptual;
     const codigoCorregido = optimizacion?.codigo_sugerido || review.codigo_corregido;
     
-    // Calculate a score based on available data
     const score = review.calidad_codigo || 
         Math.min(10, Math.max(1, 5 + puntosFuertes.length - oportunidades.length));
 
@@ -48,7 +44,6 @@ export function AIReviewBottomSheet({ visible, onClose, review }: AIReviewBottom
         >
             <Pressable style={styles.backdrop} onPress={onClose}>
                 <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
-                    {/* Drag Handle */}
                     <View style={styles.dragHandle} />
 
                     <ScrollView
@@ -56,7 +51,6 @@ export function AIReviewBottomSheet({ visible, onClose, review }: AIReviewBottom
                         contentContainerStyle={styles.content}
                         showsVerticalScrollIndicator={false}
                     >
-                        {/* Header */}
                         <View style={styles.header}>
                             <Text style={styles.title}>Revisión de IA</Text>
                             <Pressable onPress={onClose} style={styles.closeButton}>
@@ -64,7 +58,6 @@ export function AIReviewBottomSheet({ visible, onClose, review }: AIReviewBottom
                             </Pressable>
                         </View>
 
-                        {/* Quality Score */}
                         <View style={styles.scoreCard}>
                             <Ionicons name="star" size={32} color={COLORS.warning} />
                             <View style={styles.scoreInfo}>
@@ -73,7 +66,6 @@ export function AIReviewBottomSheet({ visible, onClose, review }: AIReviewBottom
                             </View>
                         </View>
 
-                        {/* Executive Summary */}
                         <View style={styles.section}>
                             <View style={styles.sectionHeader}>
                                 <Ionicons name="chatbubble-ellipses" size={20} color={COLORS.primary} />
@@ -82,7 +74,6 @@ export function AIReviewBottomSheet({ visible, onClose, review }: AIReviewBottom
                             <Text style={styles.sectionText}>{resumen}</Text>
                         </View>
 
-                        {/* Strong Points */}
                         {puntosFuertes.length > 0 && (
                             <View style={styles.section}>
                                 <View style={styles.sectionHeader}>
@@ -98,7 +89,6 @@ export function AIReviewBottomSheet({ visible, onClose, review }: AIReviewBottom
                             </View>
                         )}
 
-                        {/* Improvement Opportunities */}
                         {oportunidades.length > 0 && (
                             <View style={styles.section}>
                                 <View style={styles.sectionHeader}>
@@ -114,7 +104,6 @@ export function AIReviewBottomSheet({ visible, onClose, review }: AIReviewBottom
                             </View>
                         )}
 
-                        {/* Hint */}
                         {pista && (
                             <View style={styles.section}>
                                 <View style={styles.sectionHeader}>
@@ -127,7 +116,6 @@ export function AIReviewBottomSheet({ visible, onClose, review }: AIReviewBottom
                             </View>
                         )}
 
-                        {/* Suggested Code */}
                         {codigoCorregido && (
                             <View style={styles.section}>
                                 <View style={styles.sectionHeader}>
