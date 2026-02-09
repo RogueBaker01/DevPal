@@ -1,6 +1,6 @@
 import { Platform } from 'react-native';
 
-const AZURE_BACKEND_URL = 'https://devpal-bkcff3fafcc4enea.centralus-01.azurewebsites.net';
+const AZURE_BACKEND_URL = 'https://devpalbackend-f9ftf7epesfhacer.mexicocentral-01.azurewebsites.net';
 
 const DEV_API_URL = AZURE_BACKEND_URL;
 
