@@ -5,7 +5,6 @@ from google import genai
 from google.genai import types
 from datetime import datetime, timedelta
 
-# Fallback images by category (20+ options)
 DEFAULT_IMAGES = {
     "Hackathon": [
         "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=800&q=80",

@@ -1,12 +1,8 @@
 import { Platform } from 'react-native';
 
-const LOCAL_IP = '192.168.2.1';
+const AZURE_BACKEND_URL = 'https://devpal-bkcff3fafcc4enea.centralus-01.azurewebsites.net';
 
-const DEV_API_URL = Platform.select({
-    ios: `http://${LOCAL_IP}:8000`,
-    android: `http://${LOCAL_IP}:8000`,
-    default: 'http://localhost:8000',
-});
+const DEV_API_URL = AZURE_BACKEND_URL;
 
 const PROD_API_URL = 'https://api.devpal.com/api';
 
