@@ -7,7 +7,7 @@ from app.database import SessionLocal
 from app.models.db_models import Usuario
 from app.routers.auth import verify_password
 
-TEST_EMAIL = os.getenv("TEST_USER_EMAIL", "test@test.com")
+TEST_EMAIL = os.getenv("TEST_USER_EMAIL", "test@devpal.com")
 TEST_PASSWORD = os.getenv("TEST_USER_PASSWORD", "changeme_test")
 
 db = SessionLocal()
