@@ -1,14 +1,19 @@
 import sys
-sys.path.insert(0, 'c:/Users/Rogue/Documents/DevPal/Back')
+import os
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from app.database import SessionLocal
 from app.models.db_models import Usuario
 from app.routers.auth import LoginRequest, verify_password
 from fastapi import HTTPException
 
+TEST_EMAIL = os.getenv("TEST_USER_EMAIL", "test@devpal.com")
+TEST_PASSWORD = os.getenv("TEST_USER_PASSWORD", "changeme_test")
+
 login_request = LoginRequest(
-    email="test@devpal.com",
-    password="test123"
+    email=TEST_EMAIL,
+    password=TEST_PASSWORD
 )
 
 db = SessionLocal()

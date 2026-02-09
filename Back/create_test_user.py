@@ -1,14 +1,19 @@
 import sys
-sys.path.insert(0, 'c:/Users/Rogue/Documents/DevPal/Back')
+import os
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from app.database import SessionLocal
 from app.models.db_models import Usuario, PerfilUsuario
 from app.routers.auth import hash_password
 import uuid
 
+TEST_EMAIL = os.getenv("TEST_USER_EMAIL", "test@devpal.com")
+TEST_PASSWORD = os.getenv("TEST_USER_PASSWORD", "changeme_test")
+
 db = SessionLocal()
 
-existing = db.query(Usuario).filter(Usuario.email == "test@devpal.com").first()
+existing = db.query(Usuario).filter(Usuario.email == TEST_EMAIL).first()
 if existing:
     print(f"Usuario ya existe: {existing.email} (ID: {existing.id})")
     db.close()
@@ -18,8 +23,8 @@ user = Usuario(
     id=str(uuid.uuid4()),
     nombre="Test",
     apellidos="User",
-    email="test@devpal.com",
-    password_hash=hash_password("test123"),
+    email=TEST_EMAIL,
+    password_hash=hash_password(TEST_PASSWORD),
     avatar_url="https://api.dicebear.com/7.x/avataaars/svg?seed=test"
 )
 
@@ -39,7 +44,6 @@ try:
     
     print("Usuario de prueba creado exitosamente!")
     print(f"   Email: {user.email}")
-    print(f"   Password: test123")
     print(f"   ID: {user.id}")
     print(f"\nUsa estas credenciales para hacer login en la app")
     

@@ -1,6 +1,8 @@
 import { Platform } from 'react-native';
 
-const LOCAL_IP = '192.168.2.1';
+// Configure your local IP via EXPO_PUBLIC_LOCAL_IP environment variable
+// Example: EXPO_PUBLIC_LOCAL_IP=192.168.1.100 npx expo start
+const LOCAL_IP = process.env.EXPO_PUBLIC_LOCAL_IP || 'localhost';
 
 const DEV_API_URL = Platform.select({
     ios: `http://${LOCAL_IP}:8000`,
