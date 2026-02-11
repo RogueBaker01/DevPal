@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from app.config import get_settings
 from app.middleware.simple_rate_limiter import CustomRateLimitMiddleware
 import logging
@@ -14,67 +15,46 @@ app = FastAPI(
     version="1.0.0"
 )
 
-from fastapi.staticfiles import StaticFiles
+if not os.path.exists("static/uploads"):
+    os.makedirs("static/uploads", exist_ok=True)
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 app.add_middleware(CustomRateLimitMiddleware)
 
-if not os.path.exists("static/uploads"):
-    os.makedirs("static/uploads", exist_ok=True)
-app.mount("/static", StaticFiles(directory="static"), name="static")
-
-if not settings.is_development and settings.CORS_ORIGINS == "*":
-    raise ValueError("CORS='*' no esta permitido en produccion. Define origenes especificos.")
-
+origins = settings.cors_origins_list
 if settings.CORS_ORIGINS == "*":
-    print("CORS configurado como '*' - INSEGURO para produccion")
+    origins = ["*"]
 
-# Configurar CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins_list,
+    allow_origins=origins, 
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE"],  # Específico, no "*"
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Validar CORS en startup (keeping the original startup event for logging and consistency,
-# but incorporating the new validation logic from the snippet)
 @app.on_event("startup")
 async def validate_security_config():
-    if settings.CORS_ORIGINS == "*" or (settings.cors_origins_list and settings.cors_origins_list[0] == "*"):
-        logger.warning("CORS configurado como '*' - INSEGURO para produccion")
-        if os.getenv("ENVIRONMENT") == "production":
-            raise ValueError("CORS wildcard no permitido en produccion. Especifica dominios en CORS_ORIGINS")
+
+    if settings.CORS_ORIGINS == "*" or (origins and origins[0] == "*"):
+        logger.warning("⚠️ CORS configurado como '*' - Permitido para compatibilidad con Expo")
     
-    logger.info(f"CORS configurado: {settings.cors_origins_list}")
-    logger.info(f"Ambiente: {getattr(settings, 'ENVIRONMENT', 'development')}")
-
-# Configurar CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.cors_origins_list,
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE"],  # Específico, no "*"
-    allow_headers=["*"],
-)
-
+    logger.info(f"✅ CORS activo para: {origins}")
+    logger.info(f"🌍 Ambiente: {getattr(settings, 'ENVIRONMENT', 'development')}")
 
 @app.get("/")
 async def root():
     return {
         "status": "online",
-        "message": "DevPal API está funcionando correctamente",
+        "message": "DevPal API está funcionando correctamente en Azure",
         "version": "1.0.0",
         "docs": "/docs"
     }
 
-
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
-
-
-
 
 from app.routers import auth, noticias, eventos, desafios, code_review, gamification
 
@@ -85,15 +65,19 @@ app.include_router(desafios.router, prefix="/api/desafios", tags=["Desafíos"])
 app.include_router(code_review.router, prefix="/api/code-review", tags=["Code Review"])
 app.include_router(gamification.router, prefix="/api/gamification", tags=["Gamificación"])
 
-
 @app.on_event("startup")
 async def startup_event():
-    from app.jobs.scheduled_tasks import start_scheduler
-    if settings.ENABLE_SCHEDULED_JOBS:
-        start_scheduler()
-
+    try:
+        if getattr(settings, 'ENABLE_SCHEDULED_JOBS', False):
+            from app.jobs.scheduled_tasks import start_scheduler
+            start_scheduler()
+    except ImportError:
+        logger.warning("No se pudo iniciar el scheduler (posiblemente falta librería apscheduler)")
 
 @app.on_event("shutdown")
 async def shutdown_event():
-    from app.jobs.scheduled_tasks import stop_scheduler
-    stop_scheduler()
+    try:
+        from app.jobs.scheduled_tasks import stop_scheduler
+        stop_scheduler()
+    except ImportError:
+        pass

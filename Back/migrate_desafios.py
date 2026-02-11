@@ -10,6 +10,8 @@ def migrate_desafios_table():
         "ALTER TABLE desafios_diarios ALTER COLUMN templates_lenguajes_json TYPE JSONB USING templates_lenguajes_json::jsonb;",
         "ALTER TABLE desafios_diarios ADD CONSTRAINT IF NOT EXISTS check_dificultad_valida CHECK (dificultad IN ('Facil', 'Medio', 'Dificil'));",
         "ALTER TABLE desafios_diarios ADD CONSTRAINT IF NOT EXISTS check_xp_positivo CHECK (xp_recompensa >= 0);",
+        # Eliminar columna usuario_id ya que los desafíos diarios son globales
+        "ALTER TABLE desafios_diarios DROP COLUMN IF EXISTS usuario_id;",
         """
         UPDATE desafios_diarios
         SET templates_lenguajes_json = jsonb_build_object(
