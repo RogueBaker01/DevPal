@@ -8,6 +8,7 @@ export default function ProfileLayout() {
       <Stack.Screen name="projects" />
       <Stack.Screen name="details/[id]" />
       <Stack.Screen name="new-project" />
+      <Stack.Screen name="challenges" />
     </Stack>
   );
 }
