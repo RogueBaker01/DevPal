@@ -1,6 +1,16 @@
-import Colors from "@/constants/Colors";
-import React from "react";
-import { Platform, StyleSheet, Text, View } from "react-native";
+import React, { useRef, useEffect, useState } from 'react';
+import { View, StyleSheet, ActivityIndicator, Platform } from 'react-native';
+import { WebView } from 'react-native-webview';
+
+interface Marker {
+  id: string;
+  coordinate: {
+    latitude: number;
+    longitude: number;
+  };
+  title?: string;
+  category?: string;
+}
 
 interface MapViewProps {
   style?: any;
@@ -10,177 +20,163 @@ interface MapViewProps {
     latitudeDelta: number;
     longitudeDelta: number;
   };
-  region?: {
-    latitude: number;
-    longitude: number;
-    latitudeDelta: number;
-    longitudeDelta: number;
-  };
-  onRegionChangeComplete?: (region: any) => void;
-  children?: React.ReactNode;
+  markers?: Marker[];
+  onMarkerPress?: (id: string) => void;
 }
 
-interface MarkerProps {
-  coordinate: {
-    latitude: number;
-    longitude: number;
-  };
-  title?: string;
-  description?: string;
-  onPress?: () => void;
-  children?: React.ReactNode;
-}
+const MapView = ({ style, initialRegion, markers = [], onMarkerPress }: MapViewProps) => {
+  const webViewRef = useRef<WebView>(null);
+  const [isMapReady, setIsMapReady] = useState(false);
 
-let NativeMap: any = null;
-let NativeMarker: any = null;
-let PROVIDER_GOOGLE: any = null;
+  // Generate HTML for Leaflet Map
+  const mapHtml = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+      <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+      <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+      <style>
+        body { margin: 0; padding: 0; }
+        #map { height: 100vh; width: 100vw; background-color: #0F172A; }
+        .custom-icon {
+          background-color: #22D3EE;
+          border-radius: 50%;
+          border: 2px solid white;
+          box-shadow: 0 0 10px rgba(34, 211, 238, 0.5);
+        }
+      </style>
+    </head>
+    <body>
+      <div id="map"></div>
+      <script>
+        var map = L.map('map', {
+          zoomControl: false,
+          attributionControl: false
+        });
+        
+        // Add dark theme tiles (CartoDB Dark Matter)
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+          maxZoom: 19
+        }).addTo(map);
 
-if (Platform.OS !== "web") {
-  try {
-    const Maps = require("react-native-maps");
-    NativeMap = Maps.default;
-    NativeMarker = Maps.Marker;
-    PROVIDER_GOOGLE = Maps.PROVIDER_GOOGLE;
-  } catch (e) {
-    console.warn("react-native-maps not installed or failed to load");
-  }
-}
+        var markersLayer = L.layerGroup().addTo(map);
+        var markersData = {}; // Store markers by ID for reference
 
-const WebMap = (props: MapViewProps) => {
-  const [isMounted, setIsMounted] = React.useState(false);
+        // Notify RN that map is ready to receive commands
+        setTimeout(function() {
+          window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'MAP_READY' }));
+        }, 500);
 
-  React.useEffect(() => {
-    setIsMounted(true);
-    if (Platform.OS === "web") {
-      const link = document.createElement("link");
-      link.rel = "stylesheet";
-      link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
-      document.head.appendChild(link);
+        function initMap(lat, lng, zoom) {
+          map.setView([lat, lng], zoom);
+        }
+
+        function updateMarkers(markers) {
+          markersLayer.clearLayers();
+          markersData = {};
+
+          markers.forEach(m => {
+            var iconHtml = '<div style="background-color: #22D3EE; width: 16px; height: 16px; border-radius: 50%; border: 2px solid white;"></div>';
+            
+            // Customize color based on category if needed
+            if (m.category === 'Hackathon') iconHtml = iconHtml.replace('#22D3EE', '#F472B6'); // Pink
+            
+            var icon = L.divIcon({
+              className: 'custom-marker',
+              html: iconHtml,
+              iconSize: [20, 20],
+              iconAnchor: [10, 10]
+            });
+
+            var marker = L.marker([m.coordinate.latitude, m.coordinate.longitude], { icon: icon });
+            
+            marker.on('click', function() {
+              window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'MARKER_PRESS', id: m.id }));
+            });
+
+            marker.addTo(markersLayer);
+            markersData[m.id] = marker;
+          });
+        }
+
+        // Handle messages from React Native
+        // No direct listener setup here needed for standard injection, but good practice
+      </script>
+    </body>
+    </html>
+  `;
+
+  // Initialize map with region
+  useEffect(() => {
+    if (isMapReady && initialRegion) {
+      const zoomLevel = Math.round(Math.log2(360 / initialRegion.longitudeDelta)) + 1;
+      const script = `initMap(${initialRegion.latitude}, ${initialRegion.longitude}, ${zoomLevel});`;
+      webViewRef.current?.injectJavaScript(script);
     }
-  }, []);
+  }, [isMapReady]); // On mount, wait for ready
 
-  if (!isMounted)
-    return (
-      <View style={[props.style, { backgroundColor: Colors.gray[100] }]} />
-    );
+  // Update markers when props change
+  useEffect(() => {
+    if (isMapReady) {
+      const script = `updateMarkers(${JSON.stringify(markers)});`;
+      webViewRef.current?.injectJavaScript(script);
+    }
+  }, [markers, isMapReady]);
 
-  let MapContainer, TileLayer;
-  try {
-    const RL = require("react-leaflet");
-    MapContainer = RL.MapContainer;
-    TileLayer = RL.TileLayer;
-  } catch (e) {
-    return (
-      <View style={[props.style, styles.fallback]}>
-        <Text>Map libraries missing for web</Text>
-      </View>
-    );
-  }
-
-  const targetRegion = props.region || props.initialRegion;
-  const center = targetRegion
-    ? [targetRegion.latitude, targetRegion.longitude]
-    : [19.4326, -99.1332];
-
-  const zoom = 13;
+  const handleMessage = (event: any) => {
+    try {
+      const data = JSON.parse(event.nativeEvent.data);
+      if (data.type === 'MAP_READY') {
+        setIsMapReady(true);
+      } else if (data.type === 'MARKER_PRESS') {
+        if (onMarkerPress) {
+          onMarkerPress(data.id);
+        }
+      }
+    } catch (e) {
+      // Ignore parse errors
+    }
+  };
 
   return (
-    <View style={props.style}>
-      {/* @ts-ignore */}
-      <MapContainer
-        center={center}
-        zoom={zoom}
-        style={{ height: "100%", width: "100%" }}
-      >
-        {/* @ts-ignore */}
-        <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        />
-        {React.Children.map(props.children, (child) => {
-          if (React.isValidElement(child) && child.type === MapMarker) {
-            // @ts-ignore
-            return React.cloneElement(child, { __isWeb: true });
-          }
-          return child;
-        })}
-      </MapContainer>
+    <View style={[styles.container, style]}>
+      <WebView
+        ref={webViewRef}
+        originWhitelist={['*']}
+        source={{ html: mapHtml }}
+        style={{ flex: 1, backgroundColor: '#0F172A' }}
+        onMessage={handleMessage}
+        javaScriptEnabled={true}
+        domStorageEnabled={true}
+        onError={(syntheticEvent) => {
+          const { nativeEvent } = syntheticEvent;
+          console.warn('WebView error: ', nativeEvent);
+        }}
+      />
+      {!isMapReady && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color="#22D3EE" />
+        </View>
+      )}
     </View>
   );
 };
 
-export const MapMarker = (props: MarkerProps & { __isWeb?: boolean }) => {
-  if (Platform.OS === "web") {
-    const RL = require("react-leaflet");
-    const Marker = RL.Marker;
-    const Popup = RL.Popup;
-
-    const position = [props.coordinate.latitude, props.coordinate.longitude];
-
-    return (
-      // @ts-ignore
-      <Marker position={position} eventHandlers={{ click: props.onPress }}>
-        {props.children ? (
-          // @ts-ignore
-          <Popup>
-            <div style={{ minWidth: 100 }}>
-              {props.title && <strong>{props.title}</strong>}
-              {props.description && <p>{props.description}</p>}
-            </div>
-          </Popup>
-        ) : null}
-      </Marker>
-    );
-  }
-
-  return (
-    <NativeMarker
-      coordinate={props.coordinate}
-      title={props.title}
-      description={props.description}
-      onPress={props.onPress}
-    >
-      {props.children}
-    </NativeMarker>
-  );
-};
-
-const MapView = React.forwardRef((props: MapViewProps, ref: any) => {
-  if (Platform.OS === "web") {
-    return <WebMap {...props} />;
-  }
-
-  if (!NativeMap) {
-    return (
-      <View style={[props.style, styles.fallback]}>
-        <Text>Native Maps library could not be loaded.</Text>
-        <Text style={{ fontSize: 10, marginTop: 5, color: "#666" }}>
-          Please ensure react-native-maps is installed and linked.
-        </Text>
-      </View>
-    );
-  }
-
-  return (
-    <NativeMap
-      ref={ref}
-      style={props.style}
-      provider={PROVIDER_GOOGLE}
-      initialRegion={props.initialRegion}
-      region={props.region}
-      onRegionChangeComplete={props.onRegionChangeComplete}
-    >
-      {props.children}
-    </NativeMap>
-  );
+const styles = StyleSheet.create({
+  container: {
+    overflow: 'hidden',
+    backgroundColor: '#0F172A',
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#0F172A',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 });
 
 export default MapView;
 
-const styles = StyleSheet.create({
-  fallback: {
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#f5f5f5",
-  },
-});
+// Export helper types if needed for parent
+export { MapViewProps };

@@ -26,13 +26,13 @@ export const ENDPOINTS = {
         REGISTER: (id: string) => `/eventos/${id}/registrar`,
     },
     DESAFIOS: {
-        TODAY: '/desafios/hoy/',
+        TODAY: '/desafios/hoy',
         GENERATE: '/desafios/generar',
-        HISTORY: '/desafios/historial/',
+        HISTORY: '/desafios/historial',
         COMPLETE: (id: string) => `/desafios/${id}/completar`,
         ABANDON: (id: string) => `/desafios/${id}/abandonar`,
         EXECUTE: (id: string) => `/desafios/${id}/ejecutar`,
-        
+
     },
     CODE_REVIEW: {
         REVIEW: '/code-review',

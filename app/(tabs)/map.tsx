@@ -3,7 +3,7 @@ import { View, Text, Pressable, StyleSheet, Image, Modal, ActivityIndicator } fr
 import { StatusBar } from "expo-status-bar";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import MapView, { MapMarker } from "@/components/MapView";
+import MapView from "@/components/MapView";
 import { EventsService } from "@/services/eventsService";
 import { BlurView } from "expo-blur";
 
@@ -96,6 +96,16 @@ export default function MapScreen() {
 
   const selectedEvent = events.find(e => e.id === selectedPin);
 
+  const mapMarkers = events.map(event => ({
+    id: event.id,
+    coordinate: {
+      latitude: parseFloat(event.latitud),
+      longitude: parseFloat(event.longitud),
+    },
+    title: event.titulo,
+    category: event.categoria,
+  }));
+
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
@@ -128,36 +138,12 @@ export default function MapScreen() {
       </BlurView>
 
       <View style={styles.mapContainer}>
-        {loading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={GLASS.accent} />
-            <Text style={styles.loadingText}>Cargando mapa...</Text>
-          </View>
-        ) : (
-          <MapView
-            ref={mapRef}
-            style={styles.map}
-            initialRegion={DEFAULT_REGION}
-          >
-            {events.map((event) => (
-              <MapMarker
-                key={event.id}
-                coordinate={{
-                  latitude: parseFloat(event.latitud),
-                  longitude: parseFloat(event.longitud),
-                }}
-                onPress={() => setSelectedPin(event.id)}
-              >
-                <View style={[
-                  styles.pin,
-                  selectedPin === event.id && styles.pinSelected
-                ]}>
-                  {getCategoryIcon(event.categoria)}
-                </View>
-              </MapMarker>
-            ))}
-          </MapView>
-        )}
+        <MapView
+          style={styles.map}
+          initialRegion={DEFAULT_REGION}
+          markers={mapMarkers}
+          onMarkerPress={setSelectedPin}
+        />
       </View>
 
       {selectedEvent && (
