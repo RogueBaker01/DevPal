@@ -1,13 +1,11 @@
-import { Platform } from 'react-native';
+const DEFAULT_API_BASE_URL =
+    'https://devpalbackend-f9ftf7epesfhacer.mexicocentral-01.azurewebsites.net';
 
-const AZURE_BACKEND_URL = 'https://devpalbackend-f9ftf7epesfhacer.mexicocentral-01.azurewebsites.net';
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL ?? DEFAULT_API_BASE_URL;
+const API_URL = process.env.EXPO_PUBLIC_API_URL ?? `${API_BASE_URL}/api`;
 
-const DEV_API_URL = AZURE_BACKEND_URL;
-
-const PROD_API_URL = 'https://api.devpal.com/api';
-
-export const BASE_URL = __DEV__ ? DEV_API_URL : PROD_API_URL.replace('/api', '');
-export const API_URL = __DEV__ ? `${DEV_API_URL}/api` : PROD_API_URL;
+export const BASE_URL = API_BASE_URL;
+export { API_URL };
 
 export const ENDPOINTS = {
     AUTH: {
