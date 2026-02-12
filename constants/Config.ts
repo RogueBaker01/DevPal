@@ -14,24 +14,25 @@ export const ENDPOINTS = {
         ME: (id: string) => `/auth/me/${id}`,
     },
     NOTICIAS: {
-        LIST: '/noticias',
+        LIST: '/noticias/',
         GENERATE: '/noticias/generar',
     },
     EVENTOS: {
-        LIST: '/eventos',
+        LIST: '/eventos/',
         DETAIL: (id: string) => `/eventos/${id}`,
         GENERATE: '/eventos/generar',
         SAVE: (id: string) => `/eventos/${id}/guardar`,
-        SAVED: '/eventos/guardados',
+        SAVED: '/eventos/guardados/',
         REGISTER: (id: string) => `/eventos/${id}/registrar`,
     },
     DESAFIOS: {
-        TODAY: '/desafios/hoy',
+        TODAY: '/desafios/hoy/',
         GENERATE: '/desafios/generar',
-        HISTORY: '/desafios/historial',
+        HISTORY: '/desafios/historial/',
         COMPLETE: (id: string) => `/desafios/${id}/completar`,
         ABANDON: (id: string) => `/desafios/${id}/abandonar`,
         EXECUTE: (id: string) => `/desafios/${id}/ejecutar`,
+        
     },
     CODE_REVIEW: {
         REVIEW: '/code-review',
