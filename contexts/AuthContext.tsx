@@ -34,27 +34,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             console.log('Skipping auth check - logout in progress');
             return;
         }
-        
+
         console.log('checkAuth RUNNING...');
-        
+
         try {
             const hasSession = await AuthStorage.hasActiveSession();
             const storedUserId = await AuthStorage.getUserId();
-            
+
             console.log('Auth check result:', { hasSession, storedUserId, isLoggingOut: isLoggingOutRef.current });
-            
+
             if (isLoggingOutRef.current) {
                 console.log('Logout started during check, aborting');
                 return;
             }
-            
+
             if (hasSession && storedUserId) {
                 try {
                     await api.get(ENDPOINTS.AUTH.ME(storedUserId));
                     console.log('User validated in backend');
                     setIsAuthenticated(true);
                     setUserId(storedUserId);
-                    
+
                     const onboardingCompleted = await AsyncStorage.getItem(`${ONBOARDING_KEY}_${storedUserId}`);
                     setNeedsOnboarding(onboardingCompleted !== 'true');
                     console.log('Onboarding status:', onboardingCompleted !== 'true' ? 'needed' : 'completed');
@@ -68,7 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                         console.log('Could not validate user, keeping local session');
                         setIsAuthenticated(true);
                         setUserId(storedUserId);
-                        
+
                         const onboardingCompleted = await AsyncStorage.getItem(`${ONBOARDING_KEY}_${storedUserId}`);
                         setNeedsOnboarding(onboardingCompleted !== 'true');
                     }
@@ -92,14 +92,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         const handleNavigation = async () => {
-            console.log('Navigation effect:', { 
-                isLoading, 
-                isLoggingOut: isLoggingOutRef.current, 
-                isAuthenticated, 
+            console.log('Navigation effect:', {
+                isLoading,
+                isLoggingOut: isLoggingOutRef.current,
+                isAuthenticated,
                 needsOnboarding,
-                segments: segments.join('/') 
+                segments: segments.join('/')
             });
-            
+
             if (isLoading || isLoggingOutRef.current) {
                 console.log('Skipping navigation - loading or logging out');
                 return;
@@ -128,7 +128,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 console.log('No navigation needed');
             }
         };
-        
+
         handleNavigation();
     }, [isAuthenticated, isLoading, needsOnboarding, segments]);
 
@@ -136,12 +136,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await AuthStorage.saveSession(userData, rememberMe);
         setIsAuthenticated(true);
         setUserId(userData.user_id);
-        
+
+        // Only require onboarding for new users or if explicitly requested
         if (isNewUser) {
             setNeedsOnboarding(true);
         } else {
-            const onboardingCompleted = await AsyncStorage.getItem(`${ONBOARDING_KEY}_${userData.user_id}`);
-            setNeedsOnboarding(onboardingCompleted !== 'true');
+            // Existing users are assumed to have completed onboarding (or it's optional)
+            // This prevents the preferences screen from showing on every login/reinstall
+            setNeedsOnboarding(false);
+
+            // Mark as completed in local storage to be consistent
+            if (userData.user_id) {
+                await AsyncStorage.setItem(`${ONBOARDING_KEY}_${userData.user_id}`, 'true');
+            }
         }
     };
 
@@ -155,27 +162,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const signOut = async () => {
         console.log('Signing out...');
-        
+
         isLoggingOutRef.current = true;
-        
+
         try {
             await AuthStorage.clearSession();
             console.log('Session cleared from storage');
-            
+
             const stillHasSession = await AuthStorage.hasActiveSession();
             console.log('Session after clear:', stillHasSession ? 'STILL EXISTS!' : 'cleared');
         } catch (error) {
             console.error('Error clearing session:', error);
         }
-        
+
         setIsAuthenticated(false);
         setUserId(null);
         setNeedsOnboarding(false);
-        
+
         console.log('State updated, navigating to welcome...');
-        
+
         router.replace('/(auth)/welcome');
-        
+
         setTimeout(() => {
             isLoggingOutRef.current = false;
             console.log('Logout lock released');

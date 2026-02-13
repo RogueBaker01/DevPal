@@ -34,10 +34,10 @@ function tokenizeLine(line: string, language: string): Token[] {
     const keywords = language === 'python' ? pythonKeywords : jsKeywords;
     const tokens: Token[] = [];
     let remaining = line;
-    
+
     const commentChar = language === 'python' ? '#' : '//';
     const commentIndex = remaining.indexOf(commentChar);
-    
+
     if (commentIndex !== -1 && !remaining.substring(0, commentIndex).includes('"') && !remaining.substring(0, commentIndex).includes("'")) {
         if (commentIndex > 0) {
             tokens.push(...tokenizeSegment(remaining.substring(0, commentIndex), keywords));
@@ -45,20 +45,20 @@ function tokenizeLine(line: string, language: string): Token[] {
         tokens.push({ text: remaining.substring(commentIndex), color: SYNTAX_COLORS.comment });
         return tokens;
     }
-    
+
     return tokenizeSegment(line, keywords);
 }
 
 function tokenizeSegment(segment: string, keywords: string[]): Token[] {
     const tokens: Token[] = [];
-    
+
     const regex = /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|\d+\.?\d*|\w+|[+\-*/%=<>!&|^~]+|[()[\]{}.,;:]|\s+)/g;
     let match;
-    
+
     while ((match = regex.exec(segment)) !== null) {
         const text = match[0];
         let color = SYNTAX_COLORS.default;
-        
+
         if (text.startsWith('"') || text.startsWith("'")) {
             color = SYNTAX_COLORS.string;
         } else if (/^\d/.test(text)) {
@@ -75,10 +75,10 @@ function tokenizeSegment(segment: string, keywords: string[]): Token[] {
                 color = SYNTAX_COLORS.function;
             }
         }
-        
+
         tokens.push({ text, color });
     }
-    
+
     return tokens;
 }
 
@@ -247,12 +247,14 @@ const styles = StyleSheet.create({
     },
     codeInput: {
         flex: 1,
-        color: 'transparent',
+        color: 'rgba(0,0,0,0)', // Fix for Android transparency
         fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
         fontSize: TYPOGRAPHY.sizes.base,
         lineHeight: 24,
         textAlignVertical: 'top',
         padding: 0,
+        paddingTop: 0, // Explicitly remove Android top padding
+        paddingBottom: 0, // Explicitly remove Android bottom padding
         margin: 0,
     },
     languageBadge: {
